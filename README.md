@@ -1,4 +1,4 @@
-# advanced rag agent
+# advanced RAG agent
 This repository contains a customizable **RAG agent** built with **LangGraph**, **OCI Generative AI**, and **Oracle 23AI Vector Search**.
 It now includes an **Advanced Analysis** path for complex questions on documents, enabling multi-step plan-and-execute reasoning across both session PDF evidence and global KB evidence.
 
