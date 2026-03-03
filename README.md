@@ -1,8 +1,14 @@
-# Custom RAG Agent
+# advanced rag agent
 This repository contains a customizable **RAG agent** built with **LangGraph**, **OCI Generative AI**, and **Oracle 23AI Vector Search**.
+It now includes an **Advanced Analysis** path for complex questions on documents, enabling multi-step plan-and-execute reasoning across both session PDF evidence and global KB evidence.
+
+**Features added in March 2026**
+- Advanced Analysis subgraph (`Planner -> AdvancedAnalysis -> FinalSynthesis`) for structured multi-step responses
+- Conditional routing to Advanced Analysis for `HYBRID` intent when a session PDF is loaded and the UI toggle is enabled
+- Configurable advanced-analysis controls for max actions, per-step KB retrieval, and step output size
 
 **Author**: L. Saetta  
-**Reviewed**: 2026-03-01
+**Last modified**: 2026-03-03
 
 ![UI](images/ui_image.png)
 
@@ -23,12 +29,17 @@ Use this project as a reference implementation when you need:
 .
 ├── agent/                  # LangGraph agent workflow + nodes
 │   ├── rag_agent.py
+│   ├── advanced_analysis.py
+│   ├── advanced_analysis_state.py
 │   ├── agent_state.py
 │   ├── intent_classifier.py
 │   ├── query_rewriter.py
 │   ├── vector_search.py
 │   ├── session_vector_search.py
 │   ├── hybrid_search.py
+│   ├── hybrid_query_builder.py
+│   ├── hybrid_session_search.py
+│   ├── hybrid_docs_merge.py
 │   ├── reranker.py
 │   ├── answer_generator.py
 │   ├── content_moderation.py
@@ -43,10 +54,12 @@ Use this project as a reference implementation when you need:
 │   ├── session_pdf_vlm.py
 │   ├── transport.py
 │   ├── chunk_index_utils.py
+│   ├── bm25_cache.py
 │   ├── bm25_search.py
 │   └── utils.py
 ├── docs/
-│   └── README.md           # Uploaded PDF flow and hybrid retrieval notes
+│   ├── README.md           # Uploaded PDF flow and hybrid retrieval notes
+│   └── advanced_analysis.md
 ├── assistant_ui_langgraph.py
 ├── rag_agent_api.py
 ├── pages/
