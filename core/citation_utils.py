@@ -14,6 +14,7 @@ import config
 
 
 def _citation_base_url() -> str:
+    """Helper for citation base url."""
     base = config.CITATION_BASE_URL.strip()
     if not base.endswith("/"):
         base = f"{base}/"

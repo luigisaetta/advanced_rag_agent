@@ -6,7 +6,7 @@ Python Version: 3.11
 
 License: MIT
 
-Description: 
+Description:
     In-process cache manager for BM25 indexes to support stateless request handling.
 """
 
@@ -36,6 +36,7 @@ class _BM25CacheEntry:
     ttl_seconds: int
 
     def is_expired(self) -> bool:
+        """Is expired."""
         if self.ttl_seconds <= 0:
             return False
         return (time.time() - self.created_at) > self.ttl_seconds
@@ -47,16 +48,21 @@ class BM25Cache:
     """
 
     def __init__(self, default_ttl_seconds: int = DEFAULT_BM25_CACHE_TTL_SECONDS):
+        """Initialize the instance."""
         self.default_ttl_seconds = default_ttl_seconds
         self._entries: dict[tuple[str, str, int], _BM25CacheEntry] = {}
         self._lock = threading.RLock()
 
     @staticmethod
     def _cache_file_path() -> Path:
+        """Helper for cache file path."""
         return Path(BM25_CACHE_DIR).expanduser().resolve() / BM25_CACHE_FILENAME
 
     @staticmethod
-    def _key(table_name: str, text_column: str, batch_size: int) -> tuple[str, str, int]:
+    def _key(
+        table_name: str, text_column: str, batch_size: int
+    ) -> tuple[str, str, int]:
+        """Helper for key."""
         return (table_name.upper(), text_column.upper(), int(batch_size))
 
     def get_or_create(
@@ -144,7 +150,9 @@ class BM25Cache:
         )
         return engine.search_docs(query=query, top_n=top_n)
 
-    def invalidate(self, table_name: str, text_column: str, batch_size: int = 40) -> bool:
+    def invalidate(
+        self, table_name: str, text_column: str, batch_size: int = 40
+    ) -> bool:
         """
         Remove a single cache entry.
         """
@@ -179,7 +187,11 @@ class BM25Cache:
                         "ttl_seconds": entry.ttl_seconds,
                         "engine": entry.engine.to_serialized_payload(),
                     }
-                    for (table_name, text_column, batch_size), entry in self._entries.items()
+                    for (
+                        table_name,
+                        text_column,
+                        batch_size,
+                    ), entry in self._entries.items()
                     if entry.engine is not None and entry.engine.bm25 is not None
                 ],
             }
@@ -187,7 +199,9 @@ class BM25Cache:
         with path.open("wb") as handle:
             pickle.dump(payload, handle)
 
-        logger.info("Saved BM25 cache file: %s (entries=%d)", path, len(payload["entries"]))
+        logger.info(
+            "Saved BM25 cache file: %s (entries=%d)", path, len(payload["entries"])
+        )
         return path
 
     def load_from_file(self, file_path: Path | None = None) -> int:
@@ -216,7 +230,9 @@ class BM25Cache:
                     engine_payload = item["engine"]
                     engine = BM25OracleSearch.from_serialized_payload(engine_payload)
                 except Exception as exc:  # pylint: disable=broad-exception-caught
-                    logger.warning("Skipping invalid BM25 cache entry from file: %s", exc)
+                    logger.warning(
+                        "Skipping invalid BM25 cache entry from file: %s", exc
+                    )
                     continue
 
                 key = self._key(table_name, text_column, batch_size)
@@ -243,7 +259,9 @@ class BM25Cache:
         Returns: (entries_count, loaded_from_file, cache_path)
         """
         path = self._cache_file_path()
-        target_collections = [c.strip().upper() for c in (collections or COLLECTION_LIST) if c]
+        target_collections = [
+            c.strip().upper() for c in (collections or COLLECTION_LIST) if c
+        ]
         loaded_from_file = False
 
         if path.exists():
@@ -257,7 +275,9 @@ class BM25Cache:
         for table_name in target_collections:
             key = self._key(table_name, text_column, batch_size)
             with self._lock:
-                exists = key in self._entries and self._entries[key].engine.bm25 is not None
+                exists = (
+                    key in self._entries and self._entries[key].engine.bm25 is not None
+                )
             if exists:
                 continue
             try:

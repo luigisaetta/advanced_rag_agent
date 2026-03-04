@@ -34,7 +34,9 @@ def display_msg_on_rerun(chat_hist: List[Union[HumanMessage, AIMessage]]) -> Non
         role = USER if isinstance(msg, HumanMessage) else ASSISTANT
         with st.chat_message(role):
             if role == ASSISTANT:
-                st.markdown(_normalize_markdown_text(msg.content), unsafe_allow_html=True)
+                st.markdown(
+                    _normalize_markdown_text(msg.content), unsafe_allow_html=True
+                )
             else:
                 st.markdown(msg.content)
 
@@ -66,6 +68,7 @@ def render_references(citations: list) -> None:
         return
 
     def _render_reference_line(ref: dict) -> None:
+        """Helper for render reference line."""
         source = ref.get("source", "unknown")
         page = ref.get("page", "")
         retrieval_type = ref.get("retrieval_type", "semantic")

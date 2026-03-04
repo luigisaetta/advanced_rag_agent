@@ -35,7 +35,7 @@ from agent.agent_state import State
 from core.oci_models import get_embedding_model, get_oracle_vs
 from core.utils import get_console_logger, docs_serializable
 
-from config import AGENT_NAME, DEBUG, TOP_K, EMBED_MODEL_TYPE
+from config import AGENT_NAME, DEBUG, TOP_K
 
 from config_private import CONNECT_ARGS
 
@@ -66,9 +66,6 @@ class SemanticSearch(Runnable):
         input: the agent state
         """
         collection_name = config["configurable"]["collection_name"]
-        # (07/2025) added to support NVIDIA mbeddings
-        embed_model_type = config["configurable"]["embed_model_type"]
-
         relevant_docs = []
         error = None
 
@@ -79,7 +76,7 @@ class SemanticSearch(Runnable):
             logger.info("Search question: %s", search_query)
 
         try:
-            embed_model = get_embedding_model(embed_model_type)
+            embed_model = get_embedding_model()
 
             # get a connection to the DB and init VS
             with self.get_connection() as conn:
@@ -90,9 +87,7 @@ class SemanticSearch(Runnable):
                     embed_model=embed_model,
                 )
 
-                relevant_docs = v_store.similarity_search(
-                    query=search_query, k=TOP_K
-                )
+                relevant_docs = v_store.similarity_search(query=search_query, k=TOP_K)
 
             # annotate retrieval origin to support hybrid observability in references
             for doc in relevant_docs:
@@ -123,7 +118,7 @@ class SemanticSearch(Runnable):
         docs is a list of Langchain documents
         """
         try:
-            embed_model = get_embedding_model(EMBED_MODEL_TYPE)
+            embed_model = get_embedding_model()
 
             with self.get_connection() as conn:
                 v_store = get_oracle_vs(

@@ -43,6 +43,7 @@ class HybridQueryBuilder(Runnable):
 
     @staticmethod
     def _format_session_snippets(docs: list, max_chars: int) -> str:
+        """Helper for format session snippets."""
         snippets = []
         used = 0
         for idx, doc in enumerate(docs):
@@ -61,6 +62,7 @@ class HybridQueryBuilder(Runnable):
 
     @zipkin_span(service_name=AGENT_NAME, span_name="hybrid_query_builder")
     def invoke(self, input: State, config=None, **kwargs):
+        """Invoke."""
         intent = (input.get("search_intent") or "GLOBAL_KB").upper()
         error = input.get("error")
         standalone_question = input.get("standalone_question", "")
@@ -90,7 +92,11 @@ class HybridQueryBuilder(Runnable):
 
             llm = get_llm(model_id=model_id, temperature=0.0)
             prompt = PromptTemplate(
-                input_variables=["user_request", "standalone_question", "session_snippets"],
+                input_variables=[
+                    "user_request",
+                    "standalone_question",
+                    "session_snippets",
+                ],
                 template=HYBRID_KB_QUERY_TEMPLATE,
             ).format(
                 user_request=input.get("user_request", ""),

@@ -53,8 +53,7 @@ At runtime, the UI passes the following relevant config values:
 2. `session_pdf_vector_store`: in-memory vector index (used for robust fallback retrieval)
 3. `collection_name`: KB target collection
 4. `model_id`: active LLM
-5. `embed_model_type`: embedding backend for KB search
-6. planner/executor controls:
+5. planner/executor controls:
    - `advanced_analysis_max_actions`
    - `advanced_analysis_kb_top_k`
    - `advanced_analysis_step_max_words`
@@ -157,8 +156,7 @@ Current advanced-analysis parameters in `config.py`:
 3. `ADVANCED_ANALYSIS_STEP_MAX_WORDS`
 
 Related retrieval settings still reused:
-1. `EMBED_MODEL_TYPE`
-2. `HYBRID_SESSION_TOP_K` (used in session fallback retrieval)
+1. `HYBRID_SESSION_TOP_K` (used in session fallback retrieval)
 
 ## UI Behavior
 

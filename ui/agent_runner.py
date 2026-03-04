@@ -32,10 +32,10 @@ from ui.session import add_to_chat_history, get_chat_history
 
 
 def _build_agent_config(progress_callback):
+    """Helper for build agent config."""
     return {
         "configurable": {
             "model_id": st.session_state.model_id,
-            "embed_model_type": config.EMBED_MODEL_TYPE,
             "enable_reranker": st.session_state.enable_reranker,
             "enable_advanced_analysis": st.session_state.enable_advanced_analysis,
             "enable_tracing": config.ENABLE_TRACING,
@@ -77,6 +77,7 @@ def handle_question(question: str, logger) -> None:
             advanced_progress = st.sidebar.progress(0)
 
             def _on_advanced_progress(percent: int, message: str):
+                """Helper for on advanced progress."""
                 advanced_progress.progress(max(0, min(100, int(percent))))
                 advanced_status_slot.info(f"Advanced Analysis: {message}")
 
@@ -94,7 +95,9 @@ def handle_question(question: str, logger) -> None:
             encoding=Encoding.V2_JSON,
             sample_rate=100,
         ):
-            for event in st.session_state.workflow.stream(input_state, config=agent_config):
+            for event in st.session_state.workflow.stream(
+                input_state, config=agent_config
+            ):
                 for key, value in event.items():
                     msg = f"Completed: {key}!"
                     logger.info(msg)
@@ -137,8 +140,13 @@ def handle_question(question: str, logger) -> None:
                 st.session_state.get_feedback = True
         else:
             st.error(error)
-            if st.session_state.enable_advanced_analysis and advanced_status_slot is not None:
-                advanced_status_slot.warning("Advanced Analysis: interrupted due to error")
+            if (
+                st.session_state.enable_advanced_analysis
+                and advanced_status_slot is not None
+            ):
+                advanced_status_slot.warning(
+                    "Advanced Analysis: interrupted due to error"
+                )
 
         add_to_chat_history(HumanMessage(content=question))
         if full_response:

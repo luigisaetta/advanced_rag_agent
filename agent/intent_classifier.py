@@ -36,6 +36,7 @@ class IntentClassifier(Runnable):
 
     @staticmethod
     def _has_session_pdf(config) -> bool:
+        """Helper for has session pdf."""
         configurable = (config or {}).get("configurable", {})
         vs = configurable.get("session_pdf_vector_store")
         chunks_count = configurable.get("session_pdf_chunks_count", 0)
@@ -43,6 +44,7 @@ class IntentClassifier(Runnable):
 
     @staticmethod
     def _normalize_intent(raw_intent: str) -> str:
+        """Helper for normalize intent."""
         if not isinstance(raw_intent, str):
             return "GLOBAL_KB"
         intent = raw_intent.strip().upper()
@@ -67,7 +69,9 @@ class IntentClassifier(Runnable):
         )
 
         if not has_session_pdf:
-            logger.info("IntentClassifier decision: GLOBAL_KB (no session PDF in memory).")
+            logger.info(
+                "IntentClassifier decision: GLOBAL_KB (no session PDF in memory)."
+            )
             return {
                 "search_intent": "GLOBAL_KB",
                 "has_session_pdf": False,

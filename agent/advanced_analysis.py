@@ -37,7 +37,6 @@ from config import (
     ADVANCED_ANALYSIS_MAX_ACTIONS,
     ADVANCED_ANALYSIS_KB_TOP_K,
     ADVANCED_ANALYSIS_STEP_MAX_WORDS,
-    EMBED_MODEL_TYPE,
     ENABLE_HYBRID_SEARCH,
     HYBRID_TOP_K,
     HYBRID_SESSION_TOP_K,
@@ -197,6 +196,7 @@ class AdvancedPlanner(Runnable):
 
     @staticmethod
     def _normalize_plan(plan: list, max_actions: int) -> list:
+        """Helper for normalize plan."""
         out = []
         for i, step in enumerate(plan[:max_actions], start=1):
             if not isinstance(step, dict):
@@ -210,7 +210,9 @@ class AdvancedPlanner(Runnable):
                         chunk_numbers.append(n)
                     elif isinstance(n, str) and n.isdigit() and int(n) > 0:
                         chunk_numbers.append(int(n))
-            objective = str(step.get("objective", "")).strip() or "analyze section relevance"
+            objective = (
+                str(step.get("objective", "")).strip() or "analyze section relevance"
+            )
             kb_needed = bool(step.get("kb_search_needed", False))
             kb_query = str(step.get("kb_query", "")).strip() if kb_needed else ""
             out.append(
@@ -227,13 +229,16 @@ class AdvancedPlanner(Runnable):
 
     @zipkin_span(service_name=AGENT_NAME, span_name="advanced_planner")
     def invoke(self, input: AdvancedAnalysisState, config=None, **kwargs):
+        """Invoke."""
         error = input.get("error")
         user_request = input.get("user_request", "")
         configurable = (config or {}).get("configurable", {})
         _emit_progress(configurable, 5, "Planner started")
         model_id = configurable.get("model_id")
         max_actions = int(
-            configurable.get("advanced_analysis_max_actions", ADVANCED_ANALYSIS_MAX_ACTIONS)
+            configurable.get(
+                "advanced_analysis_max_actions", ADVANCED_ANALYSIS_MAX_ACTIONS
+            )
         )
         max_actions = max(1, max_actions)
 
@@ -262,7 +267,9 @@ class AdvancedPlanner(Runnable):
             advanced_plan = self._normalize_plan(raw_plan, max_actions=max_actions)
 
             logger.info("AdvancedPlanner final plan: %s", advanced_plan)
-            _emit_progress(configurable, 20, f"Planner completed ({len(advanced_plan)} actions)")
+            _emit_progress(
+                configurable, 20, f"Planner completed ({len(advanced_plan)} actions)"
+            )
             return {"advanced_plan": advanced_plan, "error": error}
         except Exception as exc:
             logger.exception("AdvancedPlanner failed: %s", exc)
@@ -277,7 +284,10 @@ class AdvancedAnalysisRunner(Runnable):
 
     @staticmethod
     def _select_pdf_chunks(session_docs: list, chunk_numbers: list) -> list:
-        chunk_numbers = sorted(set(n for n in chunk_numbers if isinstance(n, int) and n > 0))
+        """Helper for select pdf chunks."""
+        chunk_numbers = sorted(
+            set(n for n in chunk_numbers if isinstance(n, int) and n > 0)
+        )
         selected = []
         for n in chunk_numbers:
             idx = n - 1
@@ -287,6 +297,7 @@ class AdvancedAnalysisRunner(Runnable):
 
     @staticmethod
     def _normalize_text(text: str) -> str:
+        """Helper for normalize text."""
         return " ".join((text or "").split()).strip().lower()
 
     def _merge_docs(self, semantic_docs: list, bm25_docs: list) -> list:
@@ -328,7 +339,10 @@ class AdvancedAnalysisRunner(Runnable):
 
         return merged
 
-    def _extend_with_neighbors(self, session_docs: list, chunk_numbers: list, radius: int = 1) -> list:
+    def _extend_with_neighbors(
+        self, session_docs: list, chunk_numbers: list, radius: int = 1
+    ) -> list:
+        """Helper for extend with neighbors."""
         expanded = set()
         total = len(session_docs)
         for n in chunk_numbers:
@@ -340,10 +354,12 @@ class AdvancedAnalysisRunner(Runnable):
 
     @staticmethod
     def _selected_text_len(selected_chunks: list) -> int:
+        """Helper for selected text len."""
         return sum(len((doc.get("page_content") or "")) for _n, doc in selected_chunks)
 
     @staticmethod
     def _format_pdf_context(selected_chunks: list, max_chars: int = 12000) -> str:
+        """Helper for format pdf context."""
         parts = []
         used = 0
         for n, doc in selected_chunks:
@@ -362,6 +378,7 @@ class AdvancedAnalysisRunner(Runnable):
 
     @staticmethod
     def _format_kb_context(kb_docs: list, max_chars: int = 8000) -> str:
+        """Helper for format kb context."""
         parts = []
         used = 0
         for i, doc in enumerate(kb_docs, start=1):
@@ -379,10 +396,9 @@ class AdvancedAnalysisRunner(Runnable):
         return "\n\n".join(parts) if parts else "No KB evidence retrieved."
 
     @staticmethod
-    def _kb_semantic_docs(
-        query: str, collection_name: str, embed_model_type: str, top_k: int
-    ) -> list:
-        embed_model = get_embedding_model(embed_model_type)
+    def _kb_semantic_docs(query: str, collection_name: str, top_k: int) -> list:
+        """Helper for kb semantic docs."""
+        embed_model = get_embedding_model()
         with oracledb.connect(**CONNECT_ARGS) as conn:
             v_store = get_oracle_vs(
                 conn=conn,
@@ -400,6 +416,7 @@ class AdvancedAnalysisRunner(Runnable):
 
     @staticmethod
     def _kb_bm25_docs(query: str, collection_name: str, top_k: int) -> list:
+        """Helper for kb bm25 docs."""
         cache = get_bm25_cache()
         results = cache.search_docs(
             query=query,
@@ -411,14 +428,16 @@ class AdvancedAnalysisRunner(Runnable):
         for doc in results:
             metadata = doc.get("metadata") or {}
             metadata["retrieval_type"] = "bm25"
-            out.append({"page_content": doc.get("page_content", ""), "metadata": metadata})
+            out.append(
+                {"page_content": doc.get("page_content", ""), "metadata": metadata}
+            )
         return out
 
-    def _kb_search_docs(self, query: str, collection_name: str, embed_model_type: str, top_k: int) -> list:
+    def _kb_search_docs(self, query: str, collection_name: str, top_k: int) -> list:
+        """Helper for kb search docs."""
         semantic_docs = self._kb_semantic_docs(
             query=query,
             collection_name=collection_name,
-            embed_model_type=embed_model_type,
             top_k=top_k,
         )
         if not ENABLE_HYBRID_SEARCH:
@@ -433,6 +452,7 @@ class AdvancedAnalysisRunner(Runnable):
 
     @staticmethod
     def _build_citations(step_no: int, selected_chunks: list, kb_docs: list) -> list:
+        """Helper for build citations."""
         citations = []
         for _n, doc in selected_chunks:
             metadata = doc.get("metadata") or {}
@@ -458,6 +478,7 @@ class AdvancedAnalysisRunner(Runnable):
 
     @staticmethod
     def _session_retrieval_fallback(configurable: dict, query: str, top_k: int) -> list:
+        """Helper for session retrieval fallback."""
         session_vs = configurable.get("session_pdf_vector_store")
         if session_vs is None:
             return []
@@ -471,7 +492,10 @@ class AdvancedAnalysisRunner(Runnable):
         except Exception:
             return []
 
-    def _merge_selected_with_fallback(self, selected_chunks: list, fallback_docs: list) -> list:
+    def _merge_selected_with_fallback(
+        self, selected_chunks: list, fallback_docs: list
+    ) -> list:
+        """Helper for merge selected with fallback."""
         merged = list(selected_chunks)
         seen = {
             self._normalize_text((doc.get("page_content") or ""))
@@ -490,6 +514,7 @@ class AdvancedAnalysisRunner(Runnable):
 
     @zipkin_span(service_name=AGENT_NAME, span_name="advanced_analysis_execution")
     def invoke(self, input: AdvancedAnalysisState, config=None, **kwargs):
+        """Invoke."""
         error = input.get("error")
         plan = input.get("advanced_plan", [])
         user_request = input.get("user_request", "")
@@ -503,10 +528,13 @@ class AdvancedAnalysisRunner(Runnable):
         session_docs = list(configurable.get("session_pdf_docs", []))
         model_id = configurable.get("model_id")
         collection_name = configurable.get("collection_name", "UNKNOWN")
-        embed_model_type = configurable.get("embed_model_type", EMBED_MODEL_TYPE)
-        kb_top_k = int(configurable.get("advanced_analysis_kb_top_k", ADVANCED_ANALYSIS_KB_TOP_K))
+        kb_top_k = int(
+            configurable.get("advanced_analysis_kb_top_k", ADVANCED_ANALYSIS_KB_TOP_K)
+        )
         step_max_words = int(
-            configurable.get("advanced_analysis_step_max_words", ADVANCED_ANALYSIS_STEP_MAX_WORDS)
+            configurable.get(
+                "advanced_analysis_step_max_words", ADVANCED_ANALYSIS_STEP_MAX_WORDS
+            )
         )
         kb_top_k = max(1, kb_top_k)
         step_max_words = max(120, step_max_words)
@@ -541,19 +569,25 @@ class AdvancedAnalysisRunner(Runnable):
             selected_chunks = self._select_pdf_chunks(session_docs, chunk_numbers)
             # include small neighborhood for better local context continuity
             if chunk_numbers:
-                selected_chunks = self._extend_with_neighbors(session_docs, chunk_numbers, radius=1)
+                selected_chunks = self._extend_with_neighbors(
+                    session_docs, chunk_numbers, radius=1
+                )
 
             # robust fallback: if planner pointers are weak/missing, retrieve from session store by step query
             step_query = f"{user_request}\n{section}\n{objective}".strip()
             if kb_query:
                 step_query = f"{step_query}\n{kb_query}"
-            if (not selected_chunks) or (self._selected_text_len(selected_chunks) < 260):
+            if (not selected_chunks) or (
+                self._selected_text_len(selected_chunks) < 260
+            ):
                 fallback_docs = self._session_retrieval_fallback(
                     configurable=configurable,
                     query=step_query,
                     top_k=HYBRID_SESSION_TOP_K,
                 )
-                selected_chunks = self._merge_selected_with_fallback(selected_chunks, fallback_docs)
+                selected_chunks = self._merge_selected_with_fallback(
+                    selected_chunks, fallback_docs
+                )
 
             kb_docs = []
             if kb_needed:
@@ -562,11 +596,12 @@ class AdvancedAnalysisRunner(Runnable):
                     kb_docs = self._kb_search_docs(
                         query=query,
                         collection_name=collection_name,
-                        embed_model_type=embed_model_type,
                         top_k=kb_top_k,
                     )
                 except Exception as exc:
-                    logger.warning("AdvancedAnalysis step %s KB search failed: %s", step_no, exc)
+                    logger.warning(
+                        "AdvancedAnalysis step %s KB search failed: %s", step_no, exc
+                    )
                     kb_docs = []
 
             pdf_context = self._format_pdf_context(selected_chunks)
@@ -597,10 +632,16 @@ class AdvancedAnalysisRunner(Runnable):
             )
 
             try:
-                step_text = (llm.invoke([HumanMessage(content=prompt)]).content or "").strip()
+                step_text = (
+                    llm.invoke([HumanMessage(content=prompt)]).content or ""
+                ).strip()
             except Exception as exc:
-                logger.warning("AdvancedAnalysis step %s generation failed: %s", step_no, exc)
-                step_text = "Unable to generate this step due to a transient model issue."
+                logger.warning(
+                    "AdvancedAnalysis step %s generation failed: %s", step_no, exc
+                )
+                step_text = (
+                    "Unable to generate this step due to a transient model issue."
+                )
 
             step_elapsed = round(time.time() - step_start, 2)
             logger.info(
@@ -622,7 +663,9 @@ class AdvancedAnalysisRunner(Runnable):
             step_outputs.append(
                 f"### {labels['step_title']} {step_no} - {section}\n{step_text}"
             )
-            all_citations.extend(self._build_citations(step_no, selected_chunks, kb_docs))
+            all_citations.extend(
+                self._build_citations(step_no, selected_chunks, kb_docs)
+            )
 
         logger.info("AdvancedAnalysis steps generated. steps=%d", len(step_outputs))
         _emit_progress(configurable, 85, "Execution completed")
@@ -642,6 +685,7 @@ class AdvancedFinalSynthesis(Runnable):
 
     @zipkin_span(service_name=AGENT_NAME, span_name="advanced_final_synthesis")
     def invoke(self, input: AdvancedAnalysisState, config=None, **kwargs):
+        """Invoke."""
         error = input.get("error")
         user_request = input.get("user_request", "")
         step_outputs = list(input.get("advanced_step_outputs", []))
@@ -655,7 +699,9 @@ class AdvancedFinalSynthesis(Runnable):
         _emit_progress(configurable, 90, "Final synthesis started")
         model_id = configurable.get("model_id")
         step_max_words = int(
-            configurable.get("advanced_analysis_step_max_words", ADVANCED_ANALYSIS_STEP_MAX_WORDS)
+            configurable.get(
+                "advanced_analysis_step_max_words", ADVANCED_ANALYSIS_STEP_MAX_WORDS
+            )
         )
         synthesis_max_words = max(180, int(step_max_words * 0.8))
 
@@ -678,10 +724,14 @@ class AdvancedFinalSynthesis(Runnable):
                 user_request=user_request,
                 step_outputs="\n\n".join(step_outputs),
             )
-            synthesis_text = (llm.invoke([HumanMessage(content=prompt)]).content or "").strip()
+            synthesis_text = (
+                llm.invoke([HumanMessage(content=prompt)]).content or ""
+            ).strip()
         except Exception as exc:
             logger.warning("AdvancedFinalSynthesis failed: %s", exc)
-            synthesis_text = "Unable to generate final synthesis due to a transient model issue."
+            synthesis_text = (
+                "Unable to generate final synthesis due to a transient model issue."
+            )
 
         final_answer = (
             "\n\n".join(step_outputs).strip()

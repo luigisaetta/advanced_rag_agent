@@ -24,8 +24,11 @@ from core.utils import docs_serializable
 
 
 def _load_jsonl(path: Path) -> List[Dict[str, Any]]:
+    """Helper for load jsonl."""
     rows: List[Dict[str, Any]] = []
-    for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+    for lineno, line in enumerate(
+        path.read_text(encoding="utf-8").splitlines(), start=1
+    ):
         line = line.strip()
         if not line:
             continue
@@ -40,6 +43,7 @@ def _load_jsonl(path: Path) -> List[Dict[str, Any]]:
 
 
 def _collect_answer_text(answer_stream: Any) -> str:
+    """Helper for collect answer text."""
     if isinstance(answer_stream, str):
         return answer_stream
     parts: List[str] = []
@@ -53,6 +57,7 @@ def _collect_answer_text(answer_stream: Any) -> str:
 
 
 def _normalize_expected_sources(values: List[str]) -> set:
+    """Helper for normalize expected sources."""
     out = set()
     for item in values:
         v = str(item).strip().lower()
@@ -64,6 +69,7 @@ def _normalize_expected_sources(values: List[str]) -> set:
 
 
 def _observed_sources_from_citations(citations: List[Dict[str, Any]]) -> set:
+    """Helper for observed sources from citations."""
     out = set()
     for c in citations:
         rt = str(c.get("retrieval_type", "")).strip().lower()
@@ -77,6 +83,7 @@ def _observed_sources_from_citations(citations: List[Dict[str, Any]]) -> set:
 def _citation_expectations_ok(
     expected_citations: List[Dict[str, Any]], citations: List[Dict[str, Any]]
 ) -> bool:
+    """Helper for citation expectations ok."""
     for exp in expected_citations:
         exp_source = str(exp.get("source", "")).strip()
         exp_page = str(exp.get("page", "")).strip()
@@ -150,6 +157,7 @@ def _citation_recall(
 
 
 def _must_contain_ok(must_contain: List[str], answer_text: str) -> bool:
+    """Helper for must contain ok."""
     text = answer_text.lower()
     return all(str(term).lower() in text for term in must_contain)
 
@@ -159,6 +167,7 @@ def _build_or_get_session_store(
     cache: Dict[str, Dict[str, Any]],
     model_id: str,
 ) -> Dict[str, Any]:
+    """Helper for build or get session store."""
     if pdf_path in cache:
         return cache[pdf_path]
 
@@ -172,7 +181,7 @@ def _build_or_get_session_store(
         max_pages=config.SESSION_PDF_MAX_PAGES,
         source_name=path.name,
     )
-    embed_model = get_embedding_model(model_type=config.EMBED_MODEL_TYPE)
+    embed_model = get_embedding_model()
     session_vs = InMemoryVectorStore(embedding=embed_model)
     if docs:
         session_vs.add_documents(docs)
@@ -196,6 +205,7 @@ def _run_case(
     session_cache: Dict[str, Dict[str, Any]],
     verbose: bool = False,
 ) -> Dict[str, Any]:
+    """Helper for run case."""
     session_pdf_path = str(case.get("session_pdf_path", "")).strip()
     session_vs = None
     session_chunks_count = 0
@@ -216,7 +226,6 @@ def _run_case(
     cfg = {
         "configurable": {
             "model_id": model_id,
-            "embed_model_type": config.EMBED_MODEL_TYPE,
             "enable_reranker": enable_reranker,
             "enable_advanced_analysis": False,
             "enable_tracing": False,
@@ -262,7 +271,9 @@ def _run_case(
                 answer_text = _collect_answer_text(payload.get("final_answer"))
 
     expected_intent = str(case.get("expected_intent", "")).strip().upper()
-    expected_sources = _normalize_expected_sources(list(case.get("expected_sources", [])))
+    expected_sources = _normalize_expected_sources(
+        list(case.get("expected_sources", []))
+    )
     expected_citations = list(case.get("expected_citations", []))
     must_contain = list(case.get("must_contain", []))
 
@@ -320,10 +331,12 @@ def _run_case(
 
 
 def _score(results: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Helper for score."""
     total = len(results)
     passed = sum(1 for r in results if r["pass"])
 
     def _ratio(key: str) -> float:
+        """Helper for ratio."""
         return round(sum(1 for r in results if r[key]) / total, 3) if total else 0.0
 
     # Recall over expected citations:
@@ -384,7 +397,10 @@ def _score(results: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run regression eval set for custom_rag_agent.")
+    """Main."""
+    parser = argparse.ArgumentParser(
+        description="Run regression eval set for custom_rag_agent."
+    )
     parser.add_argument("--dataset", required=True, help="Path to JSONL dataset.")
     parser.add_argument(
         "--out",
@@ -463,7 +479,9 @@ def main() -> None:
         "summary": summary,
         "results": results,
     }
-    out_path.write_text(json.dumps(report, indent=2, ensure_ascii=True), encoding="utf-8")
+    out_path.write_text(
+        json.dumps(report, indent=2, ensure_ascii=True), encoding="utf-8"
+    )
 
     print("")
     print("Summary:")

@@ -147,7 +147,7 @@ def create_workflow():
         hybrid_session_search=hybrid_session_search,
         hybrid_docs_merge=hybrid_docs_merge,
     )
-    
+
     # advanced analysis branch (added 02/03/2026)
     advanced_planner = AdvancedPlanner()
     advanced_runner = AdvancedAnalysisRunner()
@@ -178,7 +178,7 @@ def create_workflow():
     workflow.add_edge(START, "Moderator")
     workflow.add_edge("Moderator", "QueryRewrite")
     workflow.add_edge("QueryRewrite", "IntentClassifier")
-    
+
     # here we classify the intent and route accordingly (global KB search vs session KB search)
     # if any pdf has been uploaded
     workflow.add_conditional_edges(

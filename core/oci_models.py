@@ -31,7 +31,6 @@ from langchain_oci import OCIGenAIEmbeddings
 from langchain_community.vectorstores.utils import DistanceStrategy
 from langchain_oracledb.vectorstores.oraclevs import OracleVS
 
-from core.custom_rest_embeddings import CustomRESTEmbeddings
 from core.utils import get_console_logger
 from config import (
     DEBUG,
@@ -44,13 +43,10 @@ from config import (
     TEMPERATURE,
     MAX_TOKENS,
     EMBED_MODEL_ID,
-    NVIDIA_EMBED_MODEL_URL,
 )
 
 
 logger = get_console_logger()
-
-ALLOWED_EMBED_MODELS_TYPE = {"OCI", "NVIDIA"}
 
 # for gpt5, since max tokens is not supported
 MODELS_WITHOUT_KWARGS = {
@@ -92,31 +88,18 @@ def get_llm(model_id=LLM_MODEL_ID, temperature=TEMPERATURE, max_tokens=MAX_TOKEN
     return llm
 
 
-def get_embedding_model(model_type="OCI"):
+def get_embedding_model():
     """
     Initialize and return an instance of OCIGenAIEmbeddings with the specified configuration.
     Returns:
         OCIGenAIEmbeddings: An instance of the OCI GenAI embeddings model.
     """
-    # check model type
-    if model_type not in ALLOWED_EMBED_MODELS_TYPE:
-        raise ValueError(
-            f"Invalid value for model_type: must be one of {ALLOWED_EMBED_MODELS_TYPE}"
-        )
-
-    embed_model = None
-
-    if model_type == "OCI":
-        embed_model = OCIGenAIEmbeddings(
-            auth_type=AUTH,
-            model_id=EMBED_MODEL_ID,
-            service_endpoint=EMBED_SERVICE_ENDPOINT,
-            compartment_id=COMPARTMENT_ID,
-        )
-    elif model_type == "NVIDIA":
-        embed_model = CustomRESTEmbeddings(
-            api_url=NVIDIA_EMBED_MODEL_URL, model=EMBED_MODEL_ID
-        )
+    embed_model = OCIGenAIEmbeddings(
+        auth_type=AUTH,
+        model_id=EMBED_MODEL_ID,
+        service_endpoint=EMBED_SERVICE_ENDPOINT,
+        compartment_id=COMPARTMENT_ID,
+    )
 
     if DEBUG:
         logger.info("Embedding model is: %s", EMBED_MODEL_ID)

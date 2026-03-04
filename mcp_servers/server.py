@@ -36,8 +36,11 @@ mcp = FastMCP("bm25-cache-server")
 
 
 def _collections_to_prewarm() -> list[str]:
+    """Helper for collections to prewarm."""
     if BM25_PREWARM_COLLECTIONS.strip():
-        return [item.strip() for item in BM25_PREWARM_COLLECTIONS.split(",") if item.strip()]
+        return [
+            item.strip() for item in BM25_PREWARM_COLLECTIONS.split(",") if item.strip()
+        ]
     return list(COLLECTION_LIST)
 
 

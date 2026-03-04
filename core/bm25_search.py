@@ -6,7 +6,7 @@ Python Version: 3.11
 
 License: MIT
 
-Description: 
+Description:
     BM25 search engine implementation that indexes text retrieved from Oracle Database.
 """
 
@@ -134,7 +134,10 @@ class BM25OracleSearch:
                         _results.append(
                             {
                                 "page_content": chunk_text,
-                                "metadata": {"source": source, "page_label": page_label},
+                                "metadata": {
+                                    "source": source,
+                                    "page_label": page_label,
+                                },
                             }
                         )
 

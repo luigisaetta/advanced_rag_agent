@@ -46,7 +46,6 @@ Use this project as a reference implementation when you need:
 │   └── prompts.py
 ├── core/                   # Shared models/utilities/data helpers
 │   ├── oci_models.py
-│   ├── custom_rest_embeddings.py
 │   ├── citation_utils.py
 │   ├── db_utils.py
 │   ├── rag_feedback.py
@@ -116,7 +115,6 @@ pip install -r requirements.txt
 2. Model settings:
    - `LLM_MODEL_ID`
    - `VLM_MODEL_ID` (used for in-session scanned PDF OCR on main UI page)
-   - `EMBED_MODEL_TYPE`
    - `EMBED_MODEL_ID`
    - `RERANKER_MODEL_ID`
    - `LLM_MAX_RETRIES`

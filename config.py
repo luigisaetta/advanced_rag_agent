@@ -23,6 +23,7 @@ Notes:
 Warnings:
     This module is in development, may change in future versions.
 """
+
 import os
 
 
@@ -32,19 +33,11 @@ DEBUG = False
 AUTH = "API_KEY"
 
 # embeddings
-# added this to distinguish between Cohere end REST NVIDIA models
-# can be OCI or NVIDIA
-EMBED_MODEL_TYPE = "OCI"
-# EMBED_MODEL_TYPE = "NVIDIA"
 EMBED_MODEL_ID = "cohere.embed-v4.0"
 # EMBED_MODEL_ID = "cohere.embed-multilingual-image-v3.0"
 
 # this one needs to specify the dimension, default is 1536
 # EMBED_MODEL_ID = "cohere.embed-v4.0"
-
-# to support NVIDIA NIM
-NVIDIA_EMBED_MODEL_URL = "http://130.61.225.137:8000/v1/embeddings"
-# EMBED_MODEL_ID = "nvidia/llama-3.2-nv-embedqa-1b-v2"
 
 # LLM
 # this is the default model
@@ -76,8 +69,12 @@ EMBED_REGION = "us-chicago-1"
 # Backward-compatible alias used by some UI/read-only references.
 REGION = LLM_REGION
 COMPARTMENT_ID = "ocid1.compartment.oc1..aaaaaaaaushuwb2evpuf7rcpl4r7ugmqoe7ekmaiik3ra3m7gec3d234eknq"
-LLM_SERVICE_ENDPOINT = f"https://inference.generativeai.{LLM_REGION}.oci.oraclecloud.com"
-EMBED_SERVICE_ENDPOINT = f"https://inference.generativeai.{EMBED_REGION}.oci.oraclecloud.com"
+LLM_SERVICE_ENDPOINT = (
+    f"https://inference.generativeai.{LLM_REGION}.oci.oraclecloud.com"
+)
+EMBED_SERVICE_ENDPOINT = (
+    f"https://inference.generativeai.{EMBED_REGION}.oci.oraclecloud.com"
+)
 # Backward-compatible alias for legacy imports.
 SERVICE_ENDPOINT = LLM_SERVICE_ENDPOINT
 
@@ -92,7 +89,7 @@ if LLM_REGION == "us-chicago-1":
         "google.gemini-2.5-pro",
         "meta.llama-3.3-70b-instruct",
         "cohere.command-a-03-2025",
-    ]    
+    ]
 else:
     MODEL_LIST = [
         "openai.gpt-oss-120b",
@@ -119,7 +116,7 @@ HYBRID_QUERY_EXPANSION_TOP_K = 3
 # max chars from session chunks passed to query-expansion prompt
 HYBRID_QUERY_EXPANSION_MAX_CHARS = 3500
 
-# advanced analysis planner: max number of actions (retrievals or generations) 
+# advanced analysis planner: max number of actions (retrievals or generations)
 # that the planner can suggest to the agent when the user request is complex and requires multiple steps of reasoning
 ADVANCED_ANALYSIS_MAX_ACTIONS = 5
 # advanced analysis execution settings
@@ -156,4 +153,6 @@ CHUNK_OVERLAP = 100
 
 # section for citation server
 CITATION_SERVER_PORT = int(os.getenv("CITATION_SERVER_PORT", "8008"))
-CITATION_BASE_URL = os.getenv("CITATION_BASE_URL", f"http://127.0.0.1:{CITATION_SERVER_PORT}/")
+CITATION_BASE_URL = os.getenv(
+    "CITATION_BASE_URL", f"http://127.0.0.1:{CITATION_SERVER_PORT}/"
+)

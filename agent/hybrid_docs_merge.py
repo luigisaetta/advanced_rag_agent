@@ -30,9 +30,11 @@ class HybridDocsMerge(Runnable):
 
     @staticmethod
     def _normalize_text(text: str) -> str:
+        """Helper for normalize text."""
         return " ".join((text or "").split()).strip().lower()
 
     def invoke(self, input: State, config=None, **kwargs):
+        """Invoke."""
         kb_docs = list(input.get("retriever_docs", []))
         session_docs = list(input.get("session_retriever_docs", []))
         error = input.get("error")

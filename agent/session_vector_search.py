@@ -24,6 +24,7 @@ class SessionVectorSearch(Runnable):
     """
 
     def invoke(self, input: State, config=None, **kwargs):
+        """Invoke."""
         standalone_question = input.get("standalone_question", "")
         error = input.get("error")
         relevant_docs = []
@@ -38,7 +39,9 @@ class SessionVectorSearch(Runnable):
             return {"retriever_docs": [], "error": error}
 
         try:
-            relevant_docs = session_vs.similarity_search(query=standalone_question, k=TOP_K)
+            relevant_docs = session_vs.similarity_search(
+                query=standalone_question, k=TOP_K
+            )
             for doc in relevant_docs:
                 if doc.metadata is None:
                     doc.metadata = {}

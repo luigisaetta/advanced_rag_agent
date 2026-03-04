@@ -33,6 +33,7 @@ class HybridSessionSearch(Runnable):
     """
 
     def invoke(self, input: State, config=None, **kwargs):
+        """Invoke."""
         standalone_question = input.get("standalone_question", "")
         error = input.get("error")
         relevant_docs = []
@@ -65,4 +66,7 @@ class HybridSessionSearch(Runnable):
             logger.error("Error in HybridSessionSearch: %s", exc)
             error = str(exc)
 
-        return {"session_retriever_docs": docs_serializable(relevant_docs), "error": error}
+        return {
+            "session_retriever_docs": docs_serializable(relevant_docs),
+            "error": error,
+        }

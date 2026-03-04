@@ -64,11 +64,15 @@ class Reranker(Runnable):
 
     @staticmethod
     def _is_session_pdf_doc(doc: dict) -> bool:
-        retrieval_type = ((doc.get("metadata") or {}).get("retrieval_type", "") or "").lower()
+        """Helper for is session pdf doc."""
+        retrieval_type = (
+            (doc.get("metadata") or {}).get("retrieval_type", "") or ""
+        ).lower()
         return retrieval_type.startswith("session_pdf")
 
     @staticmethod
     def _doc_uid(doc: dict) -> tuple:
+        """Helper for doc uid."""
         metadata = doc.get("metadata") or {}
         return (
             doc.get("page_content", ""),
@@ -77,7 +81,9 @@ class Reranker(Runnable):
             metadata.get("retrieval_type", ""),
         )
 
-    def _enforce_hybrid_source_floors(self, reranked_docs: list, retriever_docs: list) -> list:
+    def _enforce_hybrid_source_floors(
+        self, reranked_docs: list, retriever_docs: list
+    ) -> list:
         """
         Keep KB quota behavior unchanged (TOP_K) and ensure at least
         HYBRID_MIN_SESSION_DOCS session chunks are present in final context.

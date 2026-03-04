@@ -11,11 +11,14 @@ import agent.hybrid_search as hybrid_module
 
 
 def test_hybrid_search_passthrough_when_disabled(monkeypatch):
+    """Test test hybrid search passthrough when disabled."""
     monkeypatch.setattr(hybrid_module.app_config, "ENABLE_HYBRID_SEARCH", False)
     node = hybrid_module.HybridSearch()
 
     state = {
-        "retriever_docs": [{"page_content": "A", "metadata": {"source": "s", "page_label": "1"}}],
+        "retriever_docs": [
+            {"page_content": "A", "metadata": {"source": "s", "page_label": "1"}}
+        ],
         "error": None,
         "standalone_question": "q",
     }
@@ -26,6 +29,7 @@ def test_hybrid_search_passthrough_when_disabled(monkeypatch):
 
 
 def test_hybrid_search_merges_and_deduplicates(monkeypatch):
+    """Test test hybrid search merges and deduplicates."""
     monkeypatch.setattr(hybrid_module.app_config, "ENABLE_HYBRID_SEARCH", True)
     node = hybrid_module.HybridSearch()
 
@@ -48,6 +52,7 @@ def test_hybrid_search_merges_and_deduplicates(monkeypatch):
 
 
 def test_hybrid_search_fallback_on_bm25_error(monkeypatch):
+    """Test test hybrid search fallback on bm25 error."""
     monkeypatch.setattr(hybrid_module.app_config, "ENABLE_HYBRID_SEARCH", True)
     node = hybrid_module.HybridSearch()
 
@@ -56,6 +61,7 @@ def test_hybrid_search_fallback_on_bm25_error(monkeypatch):
     ]
 
     def _boom(query, collection):
+        """Helper for boom."""
         raise RuntimeError("bm25 unavailable")
 
     monkeypatch.setattr(node, "_bm25_docs", _boom)

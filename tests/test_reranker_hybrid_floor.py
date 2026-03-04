@@ -6,6 +6,7 @@ import agent.reranker as reranker_module
 
 
 def _doc(text, retrieval_type, source="s.pdf", page="1"):
+    """Helper for doc."""
     return {
         "page_content": text,
         "metadata": {
@@ -17,6 +18,7 @@ def _doc(text, retrieval_type, source="s.pdf", page="1"):
 
 
 def test_hybrid_floor_adds_session_docs_when_missing(monkeypatch):
+    """Test test hybrid floor adds session docs when missing."""
     monkeypatch.setattr(reranker_module, "HYBRID_MIN_SESSION_DOCS", 2)
     node = reranker_module.Reranker()
 
@@ -54,6 +56,7 @@ def test_hybrid_floor_adds_session_docs_when_missing(monkeypatch):
 
 
 def test_hybrid_floor_not_applied_to_global_kb(monkeypatch):
+    """Test test hybrid floor not applied to global kb."""
     monkeypatch.setattr(reranker_module, "HYBRID_MIN_SESSION_DOCS", 2)
     node = reranker_module.Reranker()
 
@@ -81,4 +84,3 @@ def test_hybrid_floor_not_applied_to_global_kb(monkeypatch):
 
     assert len(out["reranker_docs"]) == 1
     assert out["reranker_docs"][0]["metadata"]["retrieval_type"] == "semantic"
-

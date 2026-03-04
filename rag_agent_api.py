@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from agent.rag_agent import create_workflow
 from agent.agent_state import State
 from core.utils import get_console_logger
-from config import DEBUG, DEFAULT_COLLECTION, LLM_MODEL_ID, EMBED_MODEL_TYPE
+from config import DEBUG, DEFAULT_COLLECTION, LLM_MODEL_ID
 
 MEDIA_TYPE = "application/json"
 
@@ -42,6 +42,7 @@ def safe_json(data):
     """
 
     def default_serializer(obj):
+        """Default serializer."""
         try:
             return str(obj)
         except Exception:
@@ -92,7 +93,6 @@ async def invoke(request: InvokeRequest):
     _config = {
         "configurable": {
             "model_id": LLM_MODEL_ID,
-            "embed_model_type": EMBED_MODEL_TYPE,
             "enable_reranker": True,
             "enable_tracing": False,
             "collection_name": DEFAULT_COLLECTION,

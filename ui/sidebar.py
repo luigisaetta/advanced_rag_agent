@@ -105,6 +105,7 @@ def scan_pdf_and_store_in_session(session_pdf, logger) -> None:
         status_slot.info("Scanning PDF pages with VLM...")
 
         def _on_page_progress(current_page: int, total_pages: int):
+            """Helper for on page progress."""
             if total_pages > 0:
                 pct = 25 + int((current_page / total_pages) * 70)
                 progress_bar.progress(min(pct, 95))
@@ -119,7 +120,7 @@ def scan_pdf_and_store_in_session(session_pdf, logger) -> None:
 
         status_slot.info("Building in-memory vector index...")
         progress_bar.progress(97)
-        embed_model = get_embedding_model(model_type=config.EMBED_MODEL_TYPE)
+        embed_model = get_embedding_model()
         session_vs = InMemoryVectorStore(embedding=embed_model)
         if docs:
             session_vs.add_documents(docs)

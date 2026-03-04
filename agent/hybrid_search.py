@@ -34,6 +34,7 @@ class HybridSearch(Runnable):
 
     @staticmethod
     def _normalize_text(text: str) -> str:
+        """Helper for normalize text."""
         return " ".join((text or "").split()).strip().lower()
 
     def _merge_docs(self, semantic_docs: list, bm25_docs: list) -> list:

@@ -102,4 +102,3 @@ def stream_with_retry(
                 exc,
             )
             time.sleep(wait_s)
-

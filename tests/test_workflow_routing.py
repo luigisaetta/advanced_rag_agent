@@ -16,11 +16,13 @@ rag_module = pytest.importorskip("agent.rag_agent")
 
 class _FakeModerator(Runnable):
     def invoke(self, input_state, config=None, **kwargs):
+        """Invoke."""
         return {"error": input_state.get("error")}
 
 
 class _FakeQueryRewriter(Runnable):
     def invoke(self, input_state, config=None, **kwargs):
+        """Invoke."""
         return {
             "standalone_question": input_state.get("user_request", ""),
             "error": input_state.get("error"),
@@ -29,6 +31,7 @@ class _FakeQueryRewriter(Runnable):
 
 class _FakeIntentClassifier(Runnable):
     def invoke(self, input_state, config=None, **kwargs):
+        """Invoke."""
         configurable = (config or {}).get("configurable", {})
         session_vs = configurable.get("session_pdf_vector_store")
         chunks_count = configurable.get("session_pdf_chunks_count", 0)
@@ -52,6 +55,7 @@ class _FakeIntentClassifier(Runnable):
 
 class _FakeSearch(Runnable):
     def invoke(self, input_state, config=None, **kwargs):
+        """Invoke."""
         docs = [
             {
                 "page_content": "semantic chunk",
@@ -67,6 +71,7 @@ class _FakeSearch(Runnable):
 
 class _FakeHybridQueryBuilder(Runnable):
     def invoke(self, input_state, config=None, **kwargs):
+        """Invoke."""
         return {
             "kb_query": f"kb::{input_state.get('standalone_question', '')}",
             "error": input_state.get("error"),
@@ -75,6 +80,7 @@ class _FakeHybridQueryBuilder(Runnable):
 
 class _FakeSessionSearch(Runnable):
     def invoke(self, input_state, config=None, **kwargs):
+        """Invoke."""
         docs = [
             {
                 "page_content": "session only chunk",
@@ -90,6 +96,7 @@ class _FakeSessionSearch(Runnable):
 
 class _FakeHybridSearch(Runnable):
     def invoke(self, input_state, config=None, **kwargs):
+        """Invoke."""
         docs = list(input_state.get("retriever_docs", []))
         docs.append(
             {
@@ -106,6 +113,7 @@ class _FakeHybridSearch(Runnable):
 
 class _FakeHybridSessionSearch(Runnable):
     def invoke(self, input_state, config=None, **kwargs):
+        """Invoke."""
         docs = []
         if input_state.get("search_intent") == "HYBRID":
             docs.append(
@@ -123,18 +131,24 @@ class _FakeHybridSessionSearch(Runnable):
 
 class _FakeHybridDocsMerge(Runnable):
     def invoke(self, input_state, config=None, **kwargs):
+        """Invoke."""
         kb_docs = list(input_state.get("retriever_docs", []))
         session_docs = list(input_state.get("session_retriever_docs", []))
-        return {"retriever_docs": kb_docs + session_docs, "error": input_state.get("error")}
+        return {
+            "retriever_docs": kb_docs + session_docs,
+            "error": input_state.get("error"),
+        }
 
 
 class _FakeAdvancedPlanner(Runnable):
     def invoke(self, input_state, config=None, **kwargs):
+        """Invoke."""
         return {"advanced_plan": [], "error": input_state.get("error")}
 
 
 class _FakeAdvancedRunner(Runnable):
     def invoke(self, input_state, config=None, **kwargs):
+        """Invoke."""
         return {
             "advanced_step_outputs": ["### Step 1 - mock\nmock step output"],
             "citations": [],
@@ -144,6 +158,7 @@ class _FakeAdvancedRunner(Runnable):
 
 class _FakeAdvancedFinalSynthesis(Runnable):
     def invoke(self, input_state, config=None, **kwargs):
+        """Invoke."""
         return {
             "final_answer": "advanced placeholder with synthesis",
             "citations": input_state.get("citations", []),
@@ -153,6 +168,7 @@ class _FakeAdvancedFinalSynthesis(Runnable):
 
 class _FakeRerank(Runnable):
     def invoke(self, input_state, config=None, **kwargs):
+        """Invoke."""
         docs = input_state.get("retriever_docs", [])
         citations = [
             {
@@ -164,39 +180,42 @@ class _FakeRerank(Runnable):
             }
             for doc in docs
         ]
-        return {"reranker_docs": docs, "citations": citations, "error": input_state.get("error")}
+        return {
+            "reranker_docs": docs,
+            "citations": citations,
+            "error": input_state.get("error"),
+        }
 
 
 class _FakeAnswer(Runnable):
     def invoke(self, input_state, config=None, **kwargs):
+        """Invoke."""
         return {"final_answer": "ok", "error": input_state.get("error")}
 
 
 def _build_workflow_with_mocks(monkeypatch):
-    monkeypatch.setattr(rag_module, "ContentModerator", lambda: _FakeModerator())
-    monkeypatch.setattr(rag_module, "QueryRewriter", lambda: _FakeQueryRewriter())
-    monkeypatch.setattr(rag_module, "IntentClassifier", lambda: _FakeIntentClassifier())
-    monkeypatch.setattr(rag_module, "HybridQueryBuilder", lambda: _FakeHybridQueryBuilder())
-    monkeypatch.setattr(rag_module, "SemanticSearch", lambda: _FakeSearch())
-    monkeypatch.setattr(rag_module, "SessionVectorSearch", lambda: _FakeSessionSearch())
-    monkeypatch.setattr(rag_module, "HybridSearch", lambda: _FakeHybridSearch())
+    """Helper for build workflow with mocks."""
+    monkeypatch.setattr(rag_module, "ContentModerator", _FakeModerator)
+    monkeypatch.setattr(rag_module, "QueryRewriter", _FakeQueryRewriter)
+    monkeypatch.setattr(rag_module, "IntentClassifier", _FakeIntentClassifier)
+    monkeypatch.setattr(rag_module, "HybridQueryBuilder", _FakeHybridQueryBuilder)
+    monkeypatch.setattr(rag_module, "SemanticSearch", _FakeSearch)
+    monkeypatch.setattr(rag_module, "SessionVectorSearch", _FakeSessionSearch)
+    monkeypatch.setattr(rag_module, "HybridSearch", _FakeHybridSearch)
+    monkeypatch.setattr(rag_module, "HybridSessionSearch", _FakeHybridSessionSearch)
+    monkeypatch.setattr(rag_module, "HybridDocsMerge", _FakeHybridDocsMerge)
+    monkeypatch.setattr(rag_module, "AdvancedPlanner", _FakeAdvancedPlanner)
+    monkeypatch.setattr(rag_module, "AdvancedAnalysisRunner", _FakeAdvancedRunner)
     monkeypatch.setattr(
-        rag_module, "HybridSessionSearch", lambda: _FakeHybridSessionSearch()
+        rag_module, "AdvancedFinalSynthesis", _FakeAdvancedFinalSynthesis
     )
-    monkeypatch.setattr(rag_module, "HybridDocsMerge", lambda: _FakeHybridDocsMerge())
-    monkeypatch.setattr(rag_module, "AdvancedPlanner", lambda: _FakeAdvancedPlanner())
-    monkeypatch.setattr(
-        rag_module, "AdvancedAnalysisRunner", lambda: _FakeAdvancedRunner()
-    )
-    monkeypatch.setattr(
-        rag_module, "AdvancedFinalSynthesis", lambda: _FakeAdvancedFinalSynthesis()
-    )
-    monkeypatch.setattr(rag_module, "Reranker", lambda: _FakeRerank())
-    monkeypatch.setattr(rag_module, "AnswerGenerator", lambda: _FakeAnswer())
+    monkeypatch.setattr(rag_module, "Reranker", _FakeRerank)
+    monkeypatch.setattr(rag_module, "AnswerGenerator", _FakeAnswer)
     return rag_module.create_workflow()
 
 
 def _run_workflow(app, config):
+    """Helper for run workflow."""
     state = {"user_request": "test question", "chat_history": [], "error": None}
     events = list(app.stream(state, config=config))
     step_names = [next(iter(event.keys())) for event in events]
@@ -208,6 +227,7 @@ def _run_workflow(app, config):
 
 
 def test_global_kb_route_without_session_pdf(monkeypatch):
+    """Test test global kb route without session pdf."""
     app = _build_workflow_with_mocks(monkeypatch)
     steps, by_step = _run_workflow(
         app,
@@ -228,6 +248,7 @@ def test_global_kb_route_without_session_pdf(monkeypatch):
 
 
 def test_session_doc_route_uses_only_session_search(monkeypatch):
+    """Test test session doc route uses only session search."""
     app = _build_workflow_with_mocks(monkeypatch)
     steps, by_step = _run_workflow(
         app,
@@ -249,6 +270,7 @@ def test_session_doc_route_uses_only_session_search(monkeypatch):
 
 
 def test_hybrid_route_merges_db_and_session_provenance(monkeypatch):
+    """Test test hybrid route merges db and session provenance."""
     app = _build_workflow_with_mocks(monkeypatch)
     steps, by_step = _run_workflow(
         app,
@@ -268,6 +290,7 @@ def test_hybrid_route_merges_db_and_session_provenance(monkeypatch):
 
 
 def test_global_route_contains_db_provenance(monkeypatch):
+    """Test test global route contains db provenance."""
     app = _build_workflow_with_mocks(monkeypatch)
     _steps, by_step = _run_workflow(
         app,
@@ -285,6 +308,7 @@ def test_global_route_contains_db_provenance(monkeypatch):
 
 
 def test_hybrid_route_uses_advanced_subgraph_when_enabled(monkeypatch):
+    """Test test hybrid route uses advanced subgraph when enabled."""
     app = _build_workflow_with_mocks(monkeypatch)
     steps, by_step = _run_workflow(
         app,
