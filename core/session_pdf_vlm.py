@@ -79,6 +79,7 @@ def scan_pdf_to_docs_with_vlm(
     source_name: Optional[str] = None,
     on_progress: Optional[Callable[[int, int], None]] = None,
     metadata_retrieval_type: Optional[str] = "session_pdf_vlm",
+    split_per_page: bool = True,
 ) -> Tuple[List[Document], int]:
     """
     Scan a PDF with VLM OCR and return split LangChain documents plus total page count.
@@ -92,7 +93,7 @@ def scan_pdf_to_docs_with_vlm(
         )
 
     llm = get_llm(model_id=vlm_model_id)
-    text_splitter = get_recursive_text_splitter()
+    text_splitter = None if split_per_page else get_recursive_text_splitter()
     effective_source_name = remove_path_from_ref(source_name or pdf_path)
     # Use uploaded filename (when provided) so references/citations show real doc name.
     doc_title = effective_source_name.rsplit(".", 1)[0]
@@ -106,8 +107,14 @@ def scan_pdf_to_docs_with_vlm(
         page_text = _ocr_page_with_vlm(llm, page_data_url)
 
         if page_text:
-            splits = text_splitter.split_text(page_text)
+            splits = (
+                [page_text.strip()]
+                if split_per_page
+                else text_splitter.split_text(page_text)
+            )
             for chunk in splits:
+                if not chunk:
+                    continue
                 docs.append(
                     Document(
                         page_content=chunk_header + chunk,

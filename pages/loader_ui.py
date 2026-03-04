@@ -99,6 +99,11 @@ st.session_state.collection_name = st.sidebar.selectbox(
 show_doc = st.sidebar.button("Show documents")
 
 uploaded_file = st.sidebar.file_uploader("Upload a file", type=["pdf"])
+split_by_page = st.sidebar.checkbox(
+    "Split by page",
+    value=True,
+    help="If enabled, create one chunk per page. If disabled, use CHUNK_SIZE/CHUNK_OVERLAP from config.",
+)
 
 # added a button for loading
 load_file = st.sidebar.button("Load file")
@@ -151,6 +156,7 @@ if uploaded_file is not None and load_file:
                 source_name=only_name,
                 on_progress=_on_page_progress,
                 metadata_retrieval_type=None,
+                split_per_page=split_by_page,
             )
 
             progress_text.info("Indexing chunks in Oracle Vector Store...")
