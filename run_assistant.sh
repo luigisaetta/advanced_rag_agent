@@ -1,3 +1,2 @@
-streamlit run assistant_ui_langgraph.py
-
+streamlit run assistant_ui.py
 

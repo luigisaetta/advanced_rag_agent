@@ -78,6 +78,7 @@ def scan_pdf_to_docs_with_vlm(
     max_pages: int = SESSION_PDF_MAX_PAGES,
     source_name: Optional[str] = None,
     on_progress: Optional[Callable[[int, int], None]] = None,
+    metadata_retrieval_type: Optional[str] = "session_pdf_vlm",
 ) -> Tuple[List[Document], int]:
     """
     Scan a PDF with VLM OCR and return split LangChain documents plus total page count.
@@ -110,11 +111,18 @@ def scan_pdf_to_docs_with_vlm(
                 docs.append(
                     Document(
                         page_content=chunk_header + chunk,
-                        metadata={
-                            "source": effective_source_name,
-                            "page_label": str(idx + 1),
-                            "retrieval_type": "session_pdf_vlm",
-                        },
+                        metadata=(
+                            {
+                                "source": effective_source_name,
+                                "page_label": str(idx + 1),
+                                "retrieval_type": metadata_retrieval_type,
+                            }
+                            if metadata_retrieval_type
+                            else {
+                                "source": effective_source_name,
+                                "page_label": str(idx + 1),
+                            }
+                        ),
                     )
                 )
 

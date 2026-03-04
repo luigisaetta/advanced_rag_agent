@@ -9,7 +9,7 @@ Description:
     This module provides the UI for the RAG demo
 
 Usage:
-    streamlit run assistant_ui_langgraph.py
+    streamlit run assistant_ui.py
 
 License:
     This code is released under the MIT License.
@@ -32,7 +32,7 @@ from ui.session import get_chat_history, init_session_state, reset_conversation
 from ui.sidebar import render_sidebar, scan_pdf_and_store_in_session
 
 
-st.set_page_config(layout="wide")
+st.set_page_config(page_title="assistant ui", layout="wide")
 st.markdown(
     """
     <style>

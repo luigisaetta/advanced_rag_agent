@@ -124,7 +124,7 @@ ADVANCED_ANALYSIS_KB_TOP_K = 6
 ADVANCED_ANALYSIS_STEP_MAX_WORDS = 450
 
 # BM25 cache warms up from all the collections in this list
-COLLECTION_LIST = ["COLL01", "CONTRATTI"]
+COLLECTION_LIST = ["COLL01", "CONTRATTI", "BOOKS"]
 DEFAULT_COLLECTION = "COLL01"
 # optional persistence path for serialized BM25 cache file
 # default points to a repository-local folder (can be overridden via env var)

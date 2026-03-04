@@ -59,7 +59,7 @@ Use this project as a reference implementation when you need:
 ├── docs/
 │   ├── README.md           # Uploaded PDF flow and hybrid retrieval notes
 │   └── advanced_analysis.md
-├── assistant_ui_langgraph.py
+├── assistant_ui.py
 ├── rag_agent_api.py
 ├── pages/
 └── tests/

@@ -24,7 +24,7 @@ The session PDF store is not persistent: it lives only in the current app sessio
 
 ### Upload and Scan Flow
 
-Main entrypoint: [assistant_ui_langgraph.py](../assistant_ui_langgraph.py)
+Main entrypoint: [assistant_ui.py](../assistant_ui.py)
 
 1. User uploads file (`st.sidebar.file_uploader`).
 2. On `Scan PDF in memory`:
@@ -135,7 +135,7 @@ In Docker Compose, UI and MCP use separate host folders:
 
 ### References Behavior
 
-Reference rendering is in [assistant_ui_langgraph.py](../assistant_ui_langgraph.py).
+Reference rendering is in [assistant_ui.py](../assistant_ui.py).
 
 - For DB-backed references: source/page/link are shown (when page is parseable).
 - For session-PDF references (`retrieval_type` starts with `session_pdf`):

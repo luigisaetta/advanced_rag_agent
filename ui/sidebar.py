@@ -37,13 +37,8 @@ def render_sidebar(reset_callback):
         st.text_input(label="LLM Region", value=config.LLM_REGION, disabled=True)
         st.text_input(label="Embed Region", value=config.EMBED_REGION, disabled=True)
 
-        st.session_state.collection_name = st.selectbox(
-            "Collection name",
-            config.COLLECTION_LIST,
-        )
-
         st.session_state.model_id = st.selectbox(
-            "Select the Chat Model",
+            "LLM model",
             config.MODEL_LIST,
             index=(
                 config.MODEL_LIST.index(st.session_state.model_id)
@@ -54,6 +49,10 @@ def render_sidebar(reset_callback):
 
         st.text_input(label="Embed Model", value=config.EMBED_MODEL_ID, disabled=True)
         st.text_input(label="Session PDF VLM", value=config.VLM_MODEL_ID, disabled=True)
+        st.session_state.collection_name = st.selectbox(
+            "Collection name",
+            config.COLLECTION_LIST,
+        )
 
         st.session_state.enable_reranker = st.checkbox(
             "Enable Reranker", value=True, disabled=False

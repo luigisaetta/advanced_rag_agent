@@ -27,7 +27,6 @@ Warnings:
 from langgraph.graph import StateGraph, START, END
 
 from agent.agent_state import State
-from agent.advanced_analysis_state import AdvancedAnalysisState
 
 from agent.content_moderation import ContentModerator
 from agent.query_rewriter import QueryRewriter
@@ -43,6 +42,7 @@ from agent.advanced_analysis import (
     AdvancedAnalysisRunner,
     AdvancedFinalSynthesis,
 )
+from agent.advanced_analysis_agent import create_advanced_analysis_agent
 from agent.reranker import Reranker
 from agent.answer_generator import AnswerGenerator
 from core.utils import get_console_logger
@@ -96,24 +96,6 @@ def _create_hybrid_subgraph(
     return subgraph.compile()
 
 
-def _create_advanced_analysis_subgraph(
-    advanced_planner, advanced_runner, advanced_final_synthesis
-):
-    """
-    Advanced analysis subgraph:
-    Planner -> AdvancedAnalysis -> FinalSynthesis
-    """
-    subgraph = StateGraph(AdvancedAnalysisState)
-    subgraph.add_node("Planner", advanced_planner)
-    subgraph.add_node("AdvancedAnalysis", advanced_runner)
-    subgraph.add_node("FinalSynthesis", advanced_final_synthesis)
-    subgraph.add_edge(START, "Planner")
-    subgraph.add_edge("Planner", "AdvancedAnalysis")
-    subgraph.add_edge("AdvancedAnalysis", "FinalSynthesis")
-    subgraph.add_edge("FinalSynthesis", END)
-    return subgraph.compile()
-
-
 def create_workflow():
     """
     Create the entire workflow
@@ -152,7 +134,7 @@ def create_workflow():
     advanced_planner = AdvancedPlanner()
     advanced_runner = AdvancedAnalysisRunner()
     advanced_final_synthesis = AdvancedFinalSynthesis()
-    advanced_analysis_flow = _create_advanced_analysis_subgraph(
+    advanced_analysis_flow = create_advanced_analysis_agent(
         advanced_planner=advanced_planner,
         advanced_runner=advanced_runner,
         advanced_final_synthesis=advanced_final_synthesis,

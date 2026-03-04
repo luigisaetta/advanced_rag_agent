@@ -5,7 +5,7 @@ For a complete configuration checklist (files and required keys/paths), see [REA
 Recommended deployment method: Docker Compose (`deployment/docker/docker-compose.yml`).
 
 This setup runs:
-1. Streamlit UI (`assistant_ui_langgraph.py`)
+1. Streamlit UI (`assistant_ui.py`)
 2. A Python static web server for citation images
 3. BM25 MCP server (`fastmcp`) with startup prewarm cache
 4. Nginx reverse proxy in front of Streamlit

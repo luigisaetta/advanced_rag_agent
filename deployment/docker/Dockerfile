@@ -23,10 +23,10 @@ COPY agent /app/agent
 COPY core /app/core
 COPY ui /app/ui
 COPY pages /app/pages
-COPY assistant_ui_langgraph.py /app/assistant_ui_langgraph.py
+COPY assistant_ui.py /app/assistant_ui.py
 COPY config.py /app/config.py
 COPY config_private_template.py /app/config_private_template.py
 
 EXPOSE 8501
 
-CMD ["streamlit", "run", "assistant_ui_langgraph.py", "--server.address=0.0.0.0", "--server.port=8501"]
+CMD ["streamlit", "run", "assistant_ui.py", "--server.address=0.0.0.0", "--server.port=8501"]

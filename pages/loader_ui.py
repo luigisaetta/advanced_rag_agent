@@ -7,19 +7,16 @@ License: MIT
 Description: Streamlit utility page to upload documents and inspect loaded documents per collection.
 """
 
-import sys
 import os
 import tempfile
+
 import pandas as pd
 import streamlit as st
 
-# add parent dir
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-from config import DEBUG, COLLECTION_LIST
-from core.chunk_index_utils import load_and_split_pdf, load_and_split_docx
 from agent.vector_search import SemanticSearch
+from config import DEBUG, COLLECTION_LIST, VLM_MODEL_ID
 from core.db_utils import list_collections, list_books_in_collection
+from core.session_pdf_vlm import scan_pdf_to_docs_with_vlm
 from core.utils import get_console_logger
 
 # init session
@@ -74,6 +71,14 @@ def show_documents_in_collection(_collection_name):
             st.table(df_list)
 
 
+def _document_exists_in_collection(_collection_name: str, document_name: str) -> bool:
+    """
+    Return True when a document with the same source name already exists.
+    """
+    existing = {row[0] for row in list_books(_collection_name)}
+    return document_name in existing
+
+
 def on_selection_change():
     """
     React to the selection of the collection
@@ -93,7 +98,7 @@ st.session_state.collection_name = st.sidebar.selectbox(
 # replaced with a button
 show_doc = st.sidebar.button("Show documents")
 
-uploaded_file = st.sidebar.file_uploader("Upload a file", type=["pdf", "docx"])
+uploaded_file = st.sidebar.file_uploader("Upload a file", type=["pdf"])
 
 # added a button for loading
 load_file = st.sidebar.button("Load file")
@@ -102,64 +107,70 @@ if show_doc:
     show_documents_in_collection(st.session_state.collection_name)
 
 if uploaded_file is not None and load_file:
-    # identify file type
+    # identify file
     only_name = os.path.basename(uploaded_file.name)
-    file_ext = uploaded_file.name.split(".")[-1]
-
     if DEBUG:
-        logger.info(file_ext)
+        logger.info("Uploaded file: %s", only_name)
 
-    # save as a temporary file
-    path_file_temp = os.path.join(tempfile.gettempdir(), only_name)
-
-    progress_text = st.empty()
-    progress_bar = st.progress(0)
-
-    # write the temp file
-    progress_text.info("Saving uploaded file...")
-    with open(path_file_temp, "wb") as tmp_file:
-        tmp_file.write(uploaded_file.read())
-    progress_bar.progress(20)
+    progress_text = st.sidebar.empty()
+    progress_bar = st.sidebar.progress(0)
 
     # check that the file is not already in the collection
-    books_list = list_books(st.session_state.collection_name)
-
-    if DEBUG:
-        logger.info(books_list)
-
-    if only_name not in books_list:
+    if _document_exists_in_collection(st.session_state.collection_name, only_name):
+        progress_bar.empty()
+        progress_text.empty()
+        st.error(f"{only_name} already in collection")
+    else:
         logger.info("Loading %s ...", only_name)
 
+        tmp_path = ""
         try:
-            docs = []
+            progress_text.info("Saving uploaded file...")
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp_file:
+                tmp_file.write(uploaded_file.read())
+                tmp_path = tmp_file.name
+            progress_bar.progress(10)
 
-            progress_text.info("Scanning and splitting document...")
-            progress_bar.progress(50)
+            progress_text.info("Scanning PDF pages with VLM...")
 
-            if file_ext == "pdf":
-                docs = load_and_split_pdf(path_file_temp)
+            def _on_page_progress(current_page: int, total_pages: int):
+                """
+                Update progress while scanning PDF pages.
+                """
+                progress_text.info(
+                    f"Scanning PDF pages with VLM... ({current_page}/{total_pages})"
+                )
+                if total_pages > 0:
+                    pct = 10 + int((current_page / total_pages) * 70)
+                    progress_bar.progress(min(pct, 80))
 
-            elif file_ext == "docx":
-                docs = load_and_split_docx(path_file_temp)
+            docs, page_count = scan_pdf_to_docs_with_vlm(
+                pdf_path=tmp_path,
+                vlm_model_id=VLM_MODEL_ID,
+                max_pages=-1,
+                source_name=only_name,
+                on_progress=_on_page_progress,
+                metadata_retrieval_type=None,
+            )
 
-            progress_text.info("Indexing chunks...")
-            progress_bar.progress(80)
+            progress_text.info("Indexing chunks in Oracle Vector Store...")
+            progress_bar.progress(90)
 
-            if len(docs) > 0:
+            if docs:
                 SemanticSearch().add_documents(
                     docs, collection_name=st.session_state.collection_name
                 )
 
             progress_bar.progress(100)
-            progress_text.success("Document scanning and loading completed.")
-            st.success("Document loaded")
+            progress_text.success(
+                f"Document loaded ({page_count} pages, {len(docs)} chunks)."
+            )
+            st.success(f"{only_name} loaded in {st.session_state.collection_name}")
 
-        except Exception as exc:
+        except (ValueError, OSError, RuntimeError) as exc:
             logger.error("Error while loading document: %s", exc)
             progress_text.error("Document loading failed.")
             st.error(str(exc))
-
-    else:
-        progress_bar.empty()
-        progress_text.empty()
-        st.error(f"{only_name} already in collection")
+        finally:
+            if tmp_path and os.path.exists(tmp_path):
+                os.remove(tmp_path)

@@ -187,3 +187,128 @@ This preserves backward compatibility for existing regression sets unless explic
 3. Add dedicated regression suite with advanced-analysis enabled
 4. Add telemetry dashboard for plan quality and step-level latency
 5. Add policy controls for advanced-analysis activation by tenant/use case
+
+## Callable Usage From Python
+
+Advanced Analysis can also be executed directly from a Python script, without going through the main graph routing.
+
+Use:
+1. `create_advanced_analysis_agent(...)` from `agent/advanced_analysis_agent.py`
+2. `agent.invoke(initial_state, config=...)`
+
+Important behavior note (current implementation):
+1. Planner may still set `kb_search_needed=true` for some steps.
+2. If that happens, runner performs KB retrieval.
+3. So a "session-only" run is possible in practice, but not yet enforced by a hard runtime switch.
+
+In other words:
+1. If your prompt leads planner to keep `kb_search_needed=false`, no KB access is used.
+2. If you need strict "never access KB", add a dedicated guard flag in code (future change).
+
+## Complete Python Example
+
+The example below:
+1. Reads a local PDF from filesystem.
+2. Scans it with the same VLM pipeline used in UI.
+3. Builds serialized chunks (`session_pdf_docs`).
+4. Builds an in-memory vector store for fallback retrieval.
+5. Calls the advanced-analysis agent with initial state + config.
+
+```python
+import os
+
+from langchain_core.vectorstores import InMemoryVectorStore
+
+from agent.advanced_analysis_agent import create_advanced_analysis_agent
+from core.session_pdf_vlm import scan_pdf_to_docs_with_vlm
+from core.oci_models import get_embedding_model
+from core.utils import docs_serializable
+from config import (
+    LLM_MODEL_ID,
+    VLM_MODEL_ID,
+    DEFAULT_COLLECTION,
+    ADVANCED_ANALYSIS_MAX_ACTIONS,
+    ADVANCED_ANALYSIS_KB_TOP_K,
+    ADVANCED_ANALYSIS_STEP_MAX_WORDS,
+)
+
+
+def run_advanced_analysis_on_file(pdf_path: str, question: str):
+    if not os.path.isfile(pdf_path):
+        raise FileNotFoundError(f"PDF not found: {pdf_path}")
+
+    # 1) Scan full document with VLM OCR + chunking (no page limit here).
+    docs, page_count = scan_pdf_to_docs_with_vlm(
+        pdf_path=pdf_path,
+        vlm_model_id=VLM_MODEL_ID,
+        max_pages=-1,
+        source_name=os.path.basename(pdf_path),
+    )
+    print(f"Scanned pages={page_count}, chunks={len(docs)}")
+
+    # 2) Build serialized chunks expected by advanced-analysis config.
+    session_pdf_docs = docs_serializable(docs)
+
+    # 3) Build in-memory vector store used by advanced-analysis fallback retrieval.
+    embed_model = get_embedding_model()
+    session_pdf_vector_store = InMemoryVectorStore(embedding=embed_model)
+    if docs:
+        session_pdf_vector_store.add_documents(docs)
+
+    # 4) Build callable advanced-analysis agent.
+    advanced_agent = create_advanced_analysis_agent()
+
+    # 5) Initial state (AdvancedAnalysisState-compatible fields).
+    initial_state = {
+        "user_request": question,
+        "standalone_question": question,
+        "search_intent": "SESSION_DOC",
+        "has_session_pdf": True,
+        "advanced_analysis_enabled": True,
+        "retriever_docs": [],
+        "session_retriever_docs": [],
+        "advanced_plan": [],
+        "advanced_step_outputs": [],
+        "final_answer": "",
+        "citations": [],
+        "error": None,
+    }
+
+    # 6) Config payload consumed by planner/runner/synthesis nodes.
+    run_config = {
+        "configurable": {
+            "model_id": LLM_MODEL_ID,
+            "main_language": "same as the question",
+            "collection_name": DEFAULT_COLLECTION,
+            "session_pdf_docs": session_pdf_docs,
+            "session_pdf_vector_store": session_pdf_vector_store,
+            "advanced_analysis_max_actions": ADVANCED_ANALYSIS_MAX_ACTIONS,
+            "advanced_analysis_kb_top_k": ADVANCED_ANALYSIS_KB_TOP_K,
+            "advanced_analysis_step_max_words": ADVANCED_ANALYSIS_STEP_MAX_WORDS,
+        }
+    }
+
+    result = advanced_agent.invoke(initial_state, config=run_config)
+
+    print("----- FINAL ANSWER -----")
+    print(result.get("final_answer", ""))
+    print("----- CITATIONS -----")
+    print(result.get("citations", []))
+    print("----- ERROR -----")
+    print(result.get("error"))
+
+    return result
+
+
+if __name__ == "__main__":
+    PDF_PATH = "/absolute/path/to/your/document.pdf"
+    QUESTION = "Analyze the entire document and provide a structured synthesis."
+    run_advanced_analysis_on_file(PDF_PATH, QUESTION)
+```
+
+### Notes For Session-Only Runs
+
+If you want to minimize KB usage today:
+1. Ask explicitly for document-only analysis in the user question.
+2. Keep `search_intent` as `SESSION_DOC` in initial state.
+3. Still provide a valid `collection_name` in config because current runner can query KB if planner requests it.
