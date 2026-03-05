@@ -26,6 +26,7 @@ def test_intent_classifier_forces_global_when_no_session_pdf():
     )
     assert out["search_intent"] == "GLOBAL_KB"
     assert out["has_session_pdf"] is False
+    assert out["advanced_analysis_session_only"] is False
 
 
 def test_intent_classifier_calls_llm_when_session_pdf_exists(monkeypatch):
@@ -51,6 +52,7 @@ def test_intent_classifier_calls_llm_when_session_pdf_exists(monkeypatch):
 
     assert out["search_intent"] == "SESSION_DOC"
     assert out["has_session_pdf"] is True
+    assert out["advanced_analysis_session_only"] is True
 
 
 def test_intent_classifier_rejects_invalid_hybrid_typo():

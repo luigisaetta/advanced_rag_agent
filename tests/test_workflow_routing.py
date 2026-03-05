@@ -41,6 +41,7 @@ class _FakeIntentClassifier(Runnable):
                 "search_intent": "GLOBAL_KB",
                 "has_session_pdf": False,
                 "advanced_analysis_enabled": advanced_enabled,
+                "advanced_analysis_session_only": False,
                 "error": input_state.get("error"),
             }
 
@@ -49,6 +50,7 @@ class _FakeIntentClassifier(Runnable):
             "search_intent": forced_intent,
             "has_session_pdf": True,
             "advanced_analysis_enabled": advanced_enabled,
+            "advanced_analysis_session_only": forced_intent == "SESSION_DOC",
             "error": input_state.get("error"),
         }
 
@@ -247,8 +249,8 @@ def test_global_kb_route_without_session_pdf(monkeypatch):
     assert by_step["IntentClassifier"]["search_intent"] == "GLOBAL_KB"
 
 
-def test_session_doc_route_uses_only_session_search(monkeypatch):
-    """Test test session doc route uses only session search."""
+def test_session_doc_route_uses_advanced_subgraph_session_only(monkeypatch):
+    """Test test session doc route uses advanced subgraph session only."""
     app = _build_workflow_with_mocks(monkeypatch)
     steps, by_step = _run_workflow(
         app,
@@ -261,12 +263,13 @@ def test_session_doc_route_uses_only_session_search(monkeypatch):
         },
     )
 
-    assert "SessionSearch" in steps
+    assert "AdvancedAnalysisFlow" in steps
+    assert "SessionSearch" not in steps
+    assert "Rerank" not in steps
     assert "Search" not in steps
     assert "HybridFlow" not in steps
     assert "HybridSearch" not in steps
-    retrieval_types = {c["retrieval_type"] for c in by_step["Rerank"]["citations"]}
-    assert retrieval_types == {"session_pdf"}
+    assert by_step["AdvancedAnalysisFlow"]["final_answer"]
 
 
 def test_hybrid_route_merges_db_and_session_provenance(monkeypatch):

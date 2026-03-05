@@ -21,6 +21,7 @@ from langchain_core.messages import HumanMessage
 from langchain_core.prompts import PromptTemplate
 import oracledb
 import time
+import re
 from py_zipkin.zipkin import zipkin_span
 
 from agent.advanced_analysis_state import AdvancedAnalysisState
@@ -45,59 +46,186 @@ from config_private import CONNECT_ARGS
 
 logger = get_console_logger()
 
+LANG_STOPWORDS = {
+    "it": {
+        "il",
+        "lo",
+        "la",
+        "gli",
+        "le",
+        "un",
+        "una",
+        "di",
+        "del",
+        "della",
+        "delle",
+        "che",
+        "per",
+        "con",
+        "nel",
+        "nella",
+        "dai",
+        "dalle",
+        "sul",
+        "sulla",
+        "sono",
+        "come",
+        "anche",
+        "quindi",
+        "analizza",
+        "riassumi",
+        "documento",
+    },
+    "en": {
+        "the",
+        "and",
+        "or",
+        "to",
+        "of",
+        "for",
+        "with",
+        "in",
+        "on",
+        "from",
+        "is",
+        "are",
+        "be",
+        "this",
+        "that",
+        "these",
+        "those",
+        "using",
+        "analyze",
+        "summarize",
+        "document",
+        "section",
+        "available",
+        "knowledge",
+    },
+    "fr": {
+        "le",
+        "la",
+        "les",
+        "un",
+        "une",
+        "des",
+        "de",
+        "du",
+        "dans",
+        "avec",
+        "pour",
+        "sur",
+        "est",
+        "sont",
+        "ce",
+        "cette",
+        "ces",
+        "analyse",
+        "resumer",
+        "document",
+    },
+    "es": {
+        "el",
+        "la",
+        "los",
+        "las",
+        "un",
+        "una",
+        "de",
+        "del",
+        "con",
+        "para",
+        "en",
+        "sobre",
+        "es",
+        "son",
+        "este",
+        "esta",
+        "estos",
+        "estas",
+        "analiza",
+        "resumen",
+        "documento",
+    },
+}
+
+
+def _language_name(lang: str) -> str:
+    """
+    Return a human-readable language name for prompt constraints.
+    """
+    names = {
+        "it": "Italian",
+        "en": "English",
+        "fr": "French",
+        "es": "Spanish",
+    }
+    return names.get(lang, "the same language as the user request")
+
+
+def _tokenize_text(text: str) -> list:
+    """
+    Tokenize text into lowercase alphabetic words with basic latin accents.
+    """
+    return re.findall(r"[a-zàèéìòóùçñ]+", str(text or "").lower())
+
+
+def _detect_language_from_text(text: str) -> str:
+    """
+    Detect language with a simple stopword-scoring approach.
+    Returns one of: it, en, fr, es.
+    """
+    tokens = _tokenize_text(text)
+    if not tokens:
+        return "en"
+
+    scores = {
+        lang: sum(1 for tok in tokens if tok in stopwords)
+        for lang, stopwords in LANG_STOPWORDS.items()
+    }
+    best_lang, best_score = max(scores.items(), key=lambda item: item[1])
+    second_score = sorted(scores.values(), reverse=True)[1]
+
+    # conservative tie/low-confidence policy: default to English only when
+    # evidence is weak; otherwise honor the best-scoring language.
+    if best_score == 0:
+        return "en"
+    if best_score == second_score and best_score < 3:
+        return "en"
+    if best_score < 2:
+        return "en"
+    return best_lang
+
 
 def _detect_question_language(user_request: str) -> str:
     """
-    Lightweight language detection for user request.
-    Returns one of: it, en, fr, es.
+    Detect user-request language.
     """
-    text = f" {str(user_request or '').lower()} "
+    return _detect_language_from_text(user_request)
 
-    it_markers = [
-        " il ",
-        " lo ",
-        " la ",
-        " gli ",
-        " che ",
-        " della ",
-        " delle ",
-        " nel ",
-        " con ",
-        " per ",
-    ]
-    fr_markers = [
-        " le ",
-        " la ",
-        " les ",
-        " des ",
-        " dans ",
-        " avec ",
-        " pour ",
-        " est ",
-    ]
-    es_markers = [
-        " el ",
-        " la ",
-        " los ",
-        " las ",
-        " de ",
-        " del ",
-        " con ",
-        " para ",
-        " que ",
-    ]
 
-    it_score = sum(1 for m in it_markers if m in text)
-    fr_score = sum(1 for m in fr_markers if m in text)
-    es_score = sum(1 for m in es_markers if m in text)
-
-    if it_score >= max(fr_score, es_score) and it_score >= 2:
-        return "it"
-    if fr_score >= max(it_score, es_score) and fr_score >= 2:
-        return "fr"
-    if es_score >= max(it_score, fr_score) and es_score >= 2:
-        return "es"
-    return "en"
+def _detect_language_from_session_docs(session_docs: list) -> str:
+    """
+    Detect language from serialized session PDF chunks.
+    Uses a bounded text sample to keep it lightweight.
+    """
+    parts = []
+    used = 0
+    max_chars = 6000
+    for doc in session_docs:
+        text = str((doc or {}).get("page_content", "") or "").strip()
+        if not text:
+            continue
+        remain = max_chars - used
+        if remain <= 0:
+            break
+        snippet = text[:remain]
+        parts.append(snippet)
+        used += len(snippet)
+    sample = "\n".join(parts).strip()
+    if not sample:
+        return "en"
+    return _detect_language_from_text(sample)
 
 
 def _resolve_output_language(main_language: str, user_request: str) -> str:
@@ -116,6 +244,18 @@ def _resolve_output_language(main_language: str, user_request: str) -> str:
     if "same as the question" in lang or "same as question" in lang:
         return _detect_question_language(user_request)
     return _detect_question_language(user_request)
+
+
+def _resolve_advanced_output_language(
+    configurable: dict, user_request: str, session_docs: list, session_only: bool
+) -> str:
+    """
+    Resolve output language for advanced-analysis execution.
+    In session-only mode, prefer language inferred from PDF chunks.
+    """
+    if session_only and session_docs:
+        return _detect_language_from_session_docs(session_docs)
+    return _resolve_output_language(configurable.get("main_language", ""), user_request)
 
 
 def _get_report_labels(lang: str) -> dict:
@@ -195,7 +335,9 @@ class AdvancedPlanner(Runnable):
         return "\n\n".join(parts)
 
     @staticmethod
-    def _normalize_plan(plan: list, max_actions: int) -> list:
+    def _normalize_plan(
+        plan: list, max_actions: int, session_only: bool = False
+    ) -> list:
         """Helper for normalize plan."""
         out = []
         for i, step in enumerate(plan[:max_actions], start=1):
@@ -215,6 +357,10 @@ class AdvancedPlanner(Runnable):
             )
             kb_needed = bool(step.get("kb_search_needed", False))
             kb_query = str(step.get("kb_query", "")).strip() if kb_needed else ""
+            if session_only:
+                # In session-only mode we must never touch KB.
+                kb_needed = False
+                kb_query = ""
             out.append(
                 {
                     "step": i,
@@ -235,6 +381,24 @@ class AdvancedPlanner(Runnable):
         configurable = (config or {}).get("configurable", {})
         _emit_progress(configurable, 5, "Planner started")
         model_id = configurable.get("model_id")
+        # This runtime setting allows reusing AdvancedAnalysisFlow for SESSION_DOC
+        # requests that must stay document-only (no KB retrieval).
+        session_only = bool(
+            configurable.get("advanced_analysis_session_only", False)
+            or input.get("advanced_analysis_session_only", False)
+        )
+        session_docs = list(configurable.get("session_pdf_docs", []))
+        output_lang = _resolve_output_language(
+            configurable.get("main_language", ""),
+            user_request,
+        )
+        if session_only:
+            output_lang = _resolve_advanced_output_language(
+                configurable=configurable,
+                user_request=user_request,
+                session_docs=session_docs,
+                session_only=True,
+            )
         max_actions = int(
             configurable.get(
                 "advanced_analysis_max_actions", ADVANCED_ANALYSIS_MAX_ACTIONS
@@ -243,7 +407,6 @@ class AdvancedPlanner(Runnable):
         max_actions = max(1, max_actions)
 
         # all chunks from session PDF are expected here (serialized docs)
-        session_docs = list(configurable.get("session_pdf_docs", []))
         if not session_docs:
             logger.warning("AdvancedPlanner: no session_pdf_docs available.")
             _emit_progress(configurable, 20, "Planner completed (no session docs)")
@@ -259,12 +422,26 @@ class AdvancedPlanner(Runnable):
                 session_chunks=session_chunks,
                 max_actions=max_actions,
             )
+            prompt += (
+                "\n\nLanguage constraint: produce section names and objectives in "
+                f"{_language_name(output_lang)}."
+            )
+            if session_only:
+                prompt += (
+                    "\n\nMandatory constraint for this run: SESSION-ONLY mode is active. "
+                    "Do not require KB search in any step. "
+                    "Always set kb_search_needed to false and kb_query to an empty string."
+                )
 
             llm = get_llm(model_id=model_id, temperature=0.0)
             response = llm.invoke([HumanMessage(content=prompt)]).content
             parsed = extract_json_from_text(response)
             raw_plan = parsed.get("plan", [])
-            advanced_plan = self._normalize_plan(raw_plan, max_actions=max_actions)
+            advanced_plan = self._normalize_plan(
+                raw_plan,
+                max_actions=max_actions,
+                session_only=session_only,
+            )
 
             logger.info("AdvancedPlanner final plan: %s", advanced_plan)
             _emit_progress(
@@ -523,9 +700,21 @@ class AdvancedAnalysisRunner(Runnable):
             configurable.get("main_language", ""),
             user_request,
         )
+        # Keep this flag in config/state so SESSION_DOC can reuse this flow
+        # while explicitly disabling KB access.
+        session_only = bool(
+            configurable.get("advanced_analysis_session_only", False)
+            or input.get("advanced_analysis_session_only", False)
+        )
+        session_docs = list(configurable.get("session_pdf_docs", []))
+        output_lang = _resolve_advanced_output_language(
+            configurable=configurable,
+            user_request=user_request,
+            session_docs=session_docs,
+            session_only=session_only,
+        )
         labels = _get_report_labels(output_lang)
         _emit_progress(configurable, 25, "Execution started")
-        session_docs = list(configurable.get("session_pdf_docs", []))
         model_id = configurable.get("model_id")
         collection_name = configurable.get("collection_name", "UNKNOWN")
         kb_top_k = int(
@@ -565,6 +754,9 @@ class AdvancedAnalysisRunner(Runnable):
             chunk_numbers = list(action.get("chunk_numbers", []))
             kb_needed = bool(action.get("kb_search_needed", False))
             kb_query = str(action.get("kb_query", "")).strip()
+            if session_only:
+                kb_needed = False
+                kb_query = ""
 
             selected_chunks = self._select_pdf_chunks(session_docs, chunk_numbers)
             # include small neighborhood for better local context continuity
@@ -590,7 +782,7 @@ class AdvancedAnalysisRunner(Runnable):
                 )
 
             kb_docs = []
-            if kb_needed:
+            if kb_needed and not session_only:
                 try:
                     query = kb_query or f"{user_request} {objective}".strip()
                     kb_docs = self._kb_search_docs(
@@ -691,9 +883,16 @@ class AdvancedFinalSynthesis(Runnable):
         step_outputs = list(input.get("advanced_step_outputs", []))
         citations = list(input.get("citations", []))
         configurable = (config or {}).get("configurable", {})
-        output_lang = _resolve_output_language(
-            configurable.get("main_language", ""),
-            user_request,
+        session_only = bool(
+            configurable.get("advanced_analysis_session_only", False)
+            or input.get("advanced_analysis_session_only", False)
+        )
+        session_docs = list(configurable.get("session_pdf_docs", []))
+        output_lang = _resolve_advanced_output_language(
+            configurable=configurable,
+            user_request=user_request,
+            session_docs=session_docs,
+            session_only=session_only,
         )
         labels = _get_report_labels(output_lang)
         _emit_progress(configurable, 90, "Final synthesis started")

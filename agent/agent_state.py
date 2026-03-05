@@ -47,6 +47,8 @@ class State(TypedDict):
     has_session_pdf: bool = False
     # true when advanced analysis is enabled from UI/runtime config
     advanced_analysis_enabled: bool = False
+    # when true, advanced analysis must stay session-only and never query KB
+    advanced_analysis_session_only: bool = False
     # optional plan payload for advanced analysis subgraph
     advanced_plan: Optional[list] = []
 

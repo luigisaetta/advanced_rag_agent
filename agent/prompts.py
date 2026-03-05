@@ -254,6 +254,7 @@ Constraints:
 - keep the synthesis under {max_words} words.
 - use the same language as the user request.
 - do not invent facts outside step outputs.
+- do not add headings/titles; return only synthesis body text.
 
 User request:
 {user_request}

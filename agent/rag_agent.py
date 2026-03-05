@@ -57,6 +57,11 @@ def _route_after_intent(state: State) -> str:
     intent = (state.get("search_intent") or "GLOBAL_KB").upper()
 
     if intent == "SESSION_DOC":
+        if state.get("has_session_pdf"):
+            logger.info(
+                "Intent SESSION_DOC selected. Routing to AdvancedAnalysisFlow in session-only mode."
+            )
+            return "AdvancedAnalysisFlow"
         return "SessionSearch"
     if intent == "HYBRID":
         if state.get("has_session_pdf") and state.get("advanced_analysis_enabled"):

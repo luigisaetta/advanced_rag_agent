@@ -228,6 +228,7 @@ def _run_case(
             "model_id": model_id,
             "enable_reranker": enable_reranker,
             "enable_advanced_analysis": False,
+            "advanced_analysis_session_only": False,
             "enable_tracing": False,
             "main_language": config.MAIN_LANGUAGE,
             "collection_name": collection_name,

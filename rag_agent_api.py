@@ -94,6 +94,7 @@ async def invoke(request: InvokeRequest):
         "configurable": {
             "model_id": LLM_MODEL_ID,
             "enable_reranker": True,
+            "advanced_analysis_session_only": False,
             "enable_tracing": False,
             "collection_name": DEFAULT_COLLECTION,
             "thread_id": _thread_id,

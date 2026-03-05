@@ -30,6 +30,7 @@ class AdvancedAnalysisState(TypedDict):
     search_intent: str
     has_session_pdf: bool
     advanced_analysis_enabled: bool
+    advanced_analysis_session_only: bool
     retriever_docs: Optional[list]
     session_retriever_docs: Optional[list]
     advanced_plan: Optional[list]

@@ -76,6 +76,7 @@ class IntentClassifier(Runnable):
                 "search_intent": "GLOBAL_KB",
                 "has_session_pdf": False,
                 "advanced_analysis_enabled": advanced_analysis_enabled,
+                "advanced_analysis_session_only": False,
                 "error": error,
             }
 
@@ -100,6 +101,10 @@ class IntentClassifier(Runnable):
                 "search_intent": intent,
                 "has_session_pdf": True,
                 "advanced_analysis_enabled": advanced_analysis_enabled,
+                # SESSION_DOC requests are document-only by definition.
+                # We propagate this as runtime setting for AdvancedAnalysisFlow
+                # so planner/runner can enforce a strict "no KB" mode.
+                "advanced_analysis_session_only": intent == "SESSION_DOC",
                 "error": error,
             }
         except Exception as exc:
@@ -111,5 +116,6 @@ class IntentClassifier(Runnable):
                 "search_intent": "GLOBAL_KB",
                 "has_session_pdf": True,
                 "advanced_analysis_enabled": advanced_analysis_enabled,
+                "advanced_analysis_session_only": False,
                 "error": error,
             }

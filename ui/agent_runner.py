@@ -38,6 +38,9 @@ def _build_agent_config(progress_callback):
             "model_id": st.session_state.model_id,
             "enable_reranker": st.session_state.enable_reranker,
             "enable_advanced_analysis": st.session_state.enable_advanced_analysis,
+            # Default is false. SESSION_DOC sets this at runtime via classifier output.
+            # This key allows explicit script/config control when needed.
+            "advanced_analysis_session_only": False,
             "enable_tracing": config.ENABLE_TRACING,
             "main_language": config.MAIN_LANGUAGE,
             "collection_name": st.session_state.collection_name,
