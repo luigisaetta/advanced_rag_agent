@@ -106,6 +106,30 @@ def render_references(citations: list) -> None:
                 _render_reference_line(ref)
 
 
+def render_advanced_plan(plan: list) -> None:
+    """Render the advanced-analysis plan in a collapsible sidebar section."""
+    with st.sidebar.expander("Show advanced plan", expanded=False):
+        if not plan:
+            st.write("No plan available.")
+            return
+        for step in plan:
+            step_no = step.get("step", "?")
+            section = step.get("section", "unknown section")
+            objective = step.get("objective", "")
+            chunk_numbers = step.get("chunk_numbers", [])
+            kb_needed = bool(step.get("kb_search_needed", False))
+            kb_query = step.get("kb_query", "")
+
+            st.markdown(f"**Step {step_no} - {section}**")
+            if objective:
+                st.write(f"Objective: {objective}")
+            st.write(f"Chunk numbers: {chunk_numbers}")
+            st.write(f"KB search needed: {kb_needed}")
+            if kb_query:
+                st.write(f"KB query: {kb_query}")
+            st.divider()
+
+
 def render_answer(answer_payload) -> str:
     """Render streamed/final answer payload and return complete text."""
     full_response = ""

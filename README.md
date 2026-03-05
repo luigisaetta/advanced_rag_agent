@@ -6,6 +6,7 @@ It now includes an **Advanced Analysis** path for complex questions on documents
 - Advanced Analysis subgraph (`Planner -> AdvancedAnalysis -> FinalSynthesis`) for structured multi-step responses
 - Conditional routing to Advanced Analysis for `HYBRID` intent when a session PDF is loaded and the UI toggle is enabled
 - Configurable advanced-analysis controls for max actions, per-step KB retrieval, and step output size
+- Centralized **Prompt Profiles** (domain framing) with UI selection in sidebar `Options`
 
 **Author**: L. Saetta  
 **Last modified**: 2026-03-03
@@ -119,6 +120,7 @@ pip install -r requirements.txt
    - `RERANKER_MODEL_ID`
    - `LLM_MAX_RETRIES`
    - `SESSION_PDF_MAX_PAGES` (guardrail for in-memory PDF scan)
+   - `PROMPT_PROFILE` (default active prompt profile; can be overridden in UI)
 3. Retrieval behavior:
    - `TOP_K`
    - `COLLECTION_LIST`
@@ -126,6 +128,17 @@ pip install -r requirements.txt
    - `BM25_CACHE_DIR` (directory for serialized BM25 cache file; default `bm25_cache`)
 4. Citation links:
    - `CITATION_BASE_URL` (env-overridable, default `http://127.0.0.1:8008/`)
+
+### Prompt profiles (domain framing)
+- Domain profiles are centrally defined in `prompt_profiles.py`.
+- The active default profile is selected in `config.py` via `PROMPT_PROFILE` (or env var `PROMPT_PROFILE`).
+- In Streamlit UI, you can override the profile per session from:
+  - Sidebar -> `Options` -> `Prompt profile`
+- Current profiles include:
+  - `general`
+  - `gas_projects`
+  - `contracts_compliance`
+  - `ai_expert`
 
 ### 3) Private configuration (`config_private.py`)
 Create `config_private.py` from `config_private_template.py`, then set:
@@ -205,3 +218,7 @@ See [LICENSE](./LICENSE)
   - hybrid merge behavior;
   - workflow routing (GLOBAL_KB / SESSION_DOC / HYBRID) with pytest mocks.
 - Added consolidated docs for uploaded PDF handling and hybrid retrieval in `docs/README.md`.
+- Added centralized and UI-selectable prompt domain profiles:
+  - profile catalog in `prompt_profiles.py`;
+  - runtime selection in sidebar `Options` (`Prompt profile`);
+  - automatic prompt injection across classifier, query builder, reranker, answer generation, and advanced-analysis prompts.

@@ -26,6 +26,7 @@ Warnings:
 
 import os
 
+from prompt_profiles import PROMPT_PROFILES, DEFAULT_PROMPT_PROFILE
 
 DEBUG = False
 
@@ -82,6 +83,9 @@ SERVICE_ENDPOINT = LLM_SERVICE_ENDPOINT
 # allowed values: "same as the question", "en", "fr", "it", "es"
 MAIN_LANGUAGE = "same as the question"
 
+# prompt-domain profiles are defined in prompt_profiles.py
+PROMPT_PROFILE = os.getenv("PROMPT_PROFILE", DEFAULT_PROMPT_PROFILE)
+
 if LLM_REGION == "us-chicago-1":
     MODEL_LIST = [
         "openai.gpt-oss-120b",
@@ -122,6 +126,9 @@ ADVANCED_ANALYSIS_MAX_ACTIONS = 5
 # advanced analysis execution settings
 ADVANCED_ANALYSIS_KB_TOP_K = 6
 ADVANCED_ANALYSIS_STEP_MAX_WORDS = 450
+# optional post-synthesis risk-validation step (default disabled)
+ADVANCED_ANALYSIS_ENABLE_RISK_VALIDATION = False
+ADVANCED_ANALYSIS_RISK_VALIDATION_KB_TOP_K = 4
 
 # BM25 cache warms up from all the collections in this list
 COLLECTION_LIST = ["COLL01", "CONTRATTI", "BOOKS"]

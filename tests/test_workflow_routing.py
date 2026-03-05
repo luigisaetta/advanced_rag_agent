@@ -168,6 +168,16 @@ class _FakeAdvancedFinalSynthesis(Runnable):
         }
 
 
+class _FakeRiskValidator(Runnable):
+    def invoke(self, input_state, config=None, **kwargs):
+        """Invoke."""
+        return {
+            "final_answer": input_state.get("final_answer", ""),
+            "citations": input_state.get("citations", []),
+            "error": input_state.get("error"),
+        }
+
+
 class _FakeRerank(Runnable):
     def invoke(self, input_state, config=None, **kwargs):
         """Invoke."""
@@ -211,6 +221,7 @@ def _build_workflow_with_mocks(monkeypatch):
     monkeypatch.setattr(
         rag_module, "AdvancedFinalSynthesis", _FakeAdvancedFinalSynthesis
     )
+    monkeypatch.setattr(rag_module, "RiskValidator", _FakeRiskValidator)
     monkeypatch.setattr(rag_module, "Reranker", _FakeRerank)
     monkeypatch.setattr(rag_module, "AnswerGenerator", _FakeAnswer)
     return rag_module.create_workflow()

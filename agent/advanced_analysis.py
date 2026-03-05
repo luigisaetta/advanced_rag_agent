@@ -29,6 +29,9 @@ from agent.prompts import (
     ADVANCED_ANALYSIS_PLANNER_TEMPLATE,
     ADVANCED_ANALYSIS_STEP_TEMPLATE,
     ADVANCED_ANALYSIS_SYNTHESIS_TEMPLATE,
+    ADVANCED_ANALYSIS_RISK_CHECK_TEMPLATE,
+    ADVANCED_ANALYSIS_RISK_VALIDATION_TEMPLATE,
+    apply_prompt_profile,
 )
 from core.oci_models import get_llm, get_embedding_model, get_oracle_vs
 from core.bm25_cache import get_bm25_cache
@@ -38,6 +41,8 @@ from config import (
     ADVANCED_ANALYSIS_MAX_ACTIONS,
     ADVANCED_ANALYSIS_KB_TOP_K,
     ADVANCED_ANALYSIS_STEP_MAX_WORDS,
+    ADVANCED_ANALYSIS_ENABLE_RISK_VALIDATION,
+    ADVANCED_ANALYSIS_RISK_VALIDATION_KB_TOP_K,
     ENABLE_HYBRID_SEARCH,
     HYBRID_TOP_K,
     HYBRID_SESSION_TOP_K,
@@ -266,26 +271,38 @@ def _get_report_labels(lang: str) -> dict:
         "it": {
             "step_title": "Passo",
             "final_synthesis_title": "Sintesi Finale",
+            "risk_validation_title": "Validazione Rischi",
             "no_plan": "L'analisi avanzata non puo essere eseguita perche non e stato generato alcun piano.",
             "no_steps": "L'analisi avanzata non ha prodotto risultati intermedi da sintetizzare.",
+            "risk_validation_skipped_session_only": "Validazione KB saltata: session-only mode attiva.",
+            "risk_validation_no_critical": "Nessun aspetto negativo critico identificato.",
         },
         "fr": {
             "step_title": "Etape",
             "final_synthesis_title": "Synthese Finale",
+            "risk_validation_title": "Validation des Risques",
             "no_plan": "L'analyse avancee n'a pas pu etre executee car aucun plan n'a ete genere.",
             "no_steps": "L'analyse avancee n'a produit aucun resultat intermediaire a synthetiser.",
+            "risk_validation_skipped_session_only": "Validation KB ignoree: mode session-only actif.",
+            "risk_validation_no_critical": "Aucun point negatif critique detecte.",
         },
         "es": {
             "step_title": "Paso",
             "final_synthesis_title": "Sintesis Final",
+            "risk_validation_title": "Validacion de Riesgos",
             "no_plan": "El analisis avanzado no pudo ejecutarse porque no se genero ningun plan.",
             "no_steps": "El analisis avanzado no genero resultados intermedios para sintetizar.",
+            "risk_validation_skipped_session_only": "Validacion KB omitida: modo solo sesion activo.",
+            "risk_validation_no_critical": "No se detectaron hallazgos negativos criticos.",
         },
         "en": {
             "step_title": "Step",
             "final_synthesis_title": "Final Synthesis",
+            "risk_validation_title": "Risk Validation",
             "no_plan": "Advanced analysis could not run because no execution plan was generated.",
             "no_steps": "Advanced analysis did not produce step outputs to synthesize.",
+            "risk_validation_skipped_session_only": "KB validation skipped: session-only mode is active.",
+            "risk_validation_no_critical": "No critical negative findings detected.",
         },
     }
     return labels.get(lang, labels["en"])
@@ -304,6 +321,15 @@ def _emit_progress(configurable: dict, percent: int, message: str) -> None:
     except Exception:
         # Progress reporting must never break execution.
         return
+
+
+def _log_advanced_event(event: str, **fields) -> None:
+    """
+    Emit a structured log line for advanced-analysis observability.
+    """
+    payload = {"event": event}
+    payload.update(fields)
+    logger.info("advanced_analysis=%s", payload)
 
 
 class AdvancedPlanner(Runnable):
@@ -409,6 +435,14 @@ class AdvancedPlanner(Runnable):
         # all chunks from session PDF are expected here (serialized docs)
         if not session_docs:
             logger.warning("AdvancedPlanner: no session_pdf_docs available.")
+            _log_advanced_event(
+                "planner.no_session_docs",
+                resolved_language=output_lang,
+                session_only=session_only,
+                kb_enabled=False,
+                session_chunks=0,
+                plan_steps=0,
+            )
             _emit_progress(configurable, 20, "Planner completed (no session docs)")
             return {"advanced_plan": [], "error": error}
 
@@ -416,7 +450,9 @@ class AdvancedPlanner(Runnable):
             session_chunks = self._serialize_all_session_chunks(session_docs)
             prompt = PromptTemplate(
                 input_variables=["user_request", "session_chunks", "max_actions"],
-                template=ADVANCED_ANALYSIS_PLANNER_TEMPLATE,
+                template=apply_prompt_profile(
+                    ADVANCED_ANALYSIS_PLANNER_TEMPLATE, config=config
+                ),
             ).format(
                 user_request=user_request,
                 session_chunks=session_chunks,
@@ -443,6 +479,14 @@ class AdvancedPlanner(Runnable):
                 session_only=session_only,
             )
 
+            _log_advanced_event(
+                "planner.completed",
+                resolved_language=output_lang,
+                session_only=session_only,
+                kb_enabled=not session_only,
+                session_chunks=len(session_docs),
+                plan_steps=len(advanced_plan),
+            )
             logger.info("AdvancedPlanner final plan: %s", advanced_plan)
             _emit_progress(
                 configurable, 20, f"Planner completed ({len(advanced_plan)} actions)"
@@ -450,6 +494,14 @@ class AdvancedPlanner(Runnable):
             return {"advanced_plan": advanced_plan, "error": error}
         except Exception as exc:
             logger.exception("AdvancedPlanner failed: %s", exc)
+            _log_advanced_event(
+                "planner.failed",
+                resolved_language=output_lang,
+                session_only=session_only,
+                kb_enabled=not session_only,
+                session_chunks=len(session_docs),
+                plan_steps=0,
+            )
             _emit_progress(configurable, 20, "Planner failed")
             return {"advanced_plan": [], "error": error}
 
@@ -728,13 +780,24 @@ class AdvancedAnalysisRunner(Runnable):
         kb_top_k = max(1, kb_top_k)
         step_max_words = max(120, step_max_words)
 
-        logger.info(
-            "AdvancedAnalysisFlow called. plan_steps=%d session_chunks=%d",
-            len(plan),
-            len(session_docs),
+        _log_advanced_event(
+            "runner.started",
+            resolved_language=output_lang,
+            session_only=session_only,
+            kb_enabled=not session_only,
+            session_chunks=len(session_docs),
+            plan_steps=len(plan),
         )
 
         if not plan:
+            _log_advanced_event(
+                "runner.empty_plan",
+                resolved_language=output_lang,
+                session_only=session_only,
+                kb_enabled=not session_only,
+                session_chunks=len(session_docs),
+                plan_steps=0,
+            )
             _emit_progress(configurable, 85, "Execution skipped (empty plan)")
             return {
                 "final_answer": labels["no_plan"],
@@ -810,7 +873,9 @@ class AdvancedAnalysisRunner(Runnable):
                     "pdf_context",
                     "kb_context",
                 ],
-                template=ADVANCED_ANALYSIS_STEP_TEMPLATE,
+                template=apply_prompt_profile(
+                    ADVANCED_ANALYSIS_STEP_TEMPLATE, config=config
+                ),
             ).format(
                 max_words=step_max_words,
                 user_request=user_request,
@@ -836,13 +901,17 @@ class AdvancedAnalysisRunner(Runnable):
                 )
 
             step_elapsed = round(time.time() - step_start, 2)
-            logger.info(
-                "AdvancedAnalysis step=%s elapsed=%ss pdf_chunks=%d kb_needed=%s kb_docs=%d",
-                step_no,
-                step_elapsed,
-                len(selected_chunks),
-                kb_needed,
-                len(kb_docs),
+            _log_advanced_event(
+                "runner.step_completed",
+                resolved_language=output_lang,
+                session_only=session_only,
+                kb_enabled=not session_only,
+                session_chunks=len(selected_chunks),
+                plan_steps=len(plan),
+                step=step_no,
+                elapsed_seconds=step_elapsed,
+                kb_needed=kb_needed,
+                kb_docs=len(kb_docs),
             )
             total_steps = max(1, len(plan))
             step_progress = 25 + int((step_no / total_steps) * 60)
@@ -859,7 +928,14 @@ class AdvancedAnalysisRunner(Runnable):
                 self._build_citations(step_no, selected_chunks, kb_docs)
             )
 
-        logger.info("AdvancedAnalysis steps generated. steps=%d", len(step_outputs))
+        _log_advanced_event(
+            "runner.completed",
+            resolved_language=output_lang,
+            session_only=session_only,
+            kb_enabled=not session_only,
+            session_chunks=len(session_docs),
+            plan_steps=len(step_outputs),
+        )
         _emit_progress(configurable, 85, "Execution completed")
         return {
             "advanced_step_outputs": step_outputs,
@@ -905,6 +981,14 @@ class AdvancedFinalSynthesis(Runnable):
         synthesis_max_words = max(180, int(step_max_words * 0.8))
 
         if not step_outputs:
+            _log_advanced_event(
+                "synthesis.no_steps",
+                resolved_language=output_lang,
+                session_only=session_only,
+                kb_enabled=not session_only,
+                session_chunks=len(session_docs),
+                plan_steps=0,
+            )
             _emit_progress(configurable, 100, "Final synthesis completed (no steps)")
             return {
                 "final_answer": labels["no_steps"],
@@ -917,7 +1001,9 @@ class AdvancedFinalSynthesis(Runnable):
             llm = get_llm(model_id=model_id, temperature=0.0)
             prompt = PromptTemplate(
                 input_variables=["max_words", "user_request", "step_outputs"],
-                template=ADVANCED_ANALYSIS_SYNTHESIS_TEMPLATE,
+                template=apply_prompt_profile(
+                    ADVANCED_ANALYSIS_SYNTHESIS_TEMPLATE, config=config
+                ),
             ).format(
                 max_words=synthesis_max_words,
                 user_request=user_request,
@@ -937,6 +1023,192 @@ class AdvancedFinalSynthesis(Runnable):
             + f"\n\n---\n\n## {labels['final_synthesis_title']}\n"
             + synthesis_text
         )
-        logger.info("AdvancedFinalSynthesis generated.")
+        _log_advanced_event(
+            "synthesis.completed",
+            resolved_language=output_lang,
+            session_only=session_only,
+            kb_enabled=not session_only,
+            session_chunks=len(session_docs),
+            plan_steps=len(step_outputs),
+        )
         _emit_progress(configurable, 100, "Final synthesis completed")
         return {"final_answer": final_answer, "citations": citations, "error": error}
+
+
+class RiskValidator(Runnable):
+    """
+    Optional post-synthesis validation step.
+    If critical negative findings are detected, perform an additional KB check.
+    """
+
+    @staticmethod
+    def _normalize_claims(raw_claims) -> list:
+        """
+        Normalize claims list from LLM JSON output.
+        """
+        if not isinstance(raw_claims, list):
+            return []
+        claims = []
+        for claim in raw_claims:
+            text = str(claim or "").strip()
+            if text:
+                claims.append(text)
+        return claims[:8]
+
+    @staticmethod
+    def _format_claims_for_prompt(claims: list) -> str:
+        """
+        Format claims as a compact bullet list.
+        """
+        if not claims:
+            return "- (none)"
+        return "\n".join(f"- {claim}" for claim in claims)
+
+    @staticmethod
+    def _build_kb_query(user_request: str, claims: list) -> str:
+        """
+        Build a focused KB query for risk validation.
+        """
+        if claims:
+            return f"{user_request}\nValidate these claims:\n" + "\n".join(claims)
+        return user_request
+
+    @staticmethod
+    def _kb_validation_citations(kb_docs: list) -> list:
+        """
+        Build citations for KB docs used in risk validation.
+        """
+        citations = []
+        for doc in kb_docs:
+            metadata = doc.get("metadata") or {}
+            citations.append(
+                {
+                    "source": metadata.get("source", "unknown"),
+                    "page": metadata.get("page_label", ""),
+                    "retrieval_type": metadata.get("retrieval_type", "semantic"),
+                }
+            )
+        return citations
+
+    @zipkin_span(service_name=AGENT_NAME, span_name="advanced_risk_validation")
+    def invoke(self, input: AdvancedAnalysisState, config=None, **kwargs):
+        """
+        Validate critical negative findings and append a validation section.
+        """
+        error = input.get("error")
+        final_answer = str(input.get("final_answer", "") or "").strip()
+        citations = list(input.get("citations", []))
+        user_request = input.get("user_request", "")
+        configurable = (config or {}).get("configurable", {})
+
+        session_only = bool(
+            configurable.get("advanced_analysis_session_only", False)
+            or input.get("advanced_analysis_session_only", False)
+        )
+        session_docs = list(configurable.get("session_pdf_docs", []))
+        output_lang = _resolve_advanced_output_language(
+            configurable=configurable,
+            user_request=user_request,
+            session_docs=session_docs,
+            session_only=session_only,
+        )
+        labels = _get_report_labels(output_lang)
+
+        enable_risk_validation = bool(
+            configurable.get(
+                "advanced_analysis_enable_risk_validation",
+                ADVANCED_ANALYSIS_ENABLE_RISK_VALIDATION,
+            )
+        )
+        if not enable_risk_validation or not final_answer:
+            _log_advanced_event(
+                "risk_validation.skipped",
+                resolved_language=output_lang,
+                session_only=session_only,
+                kb_enabled=not session_only,
+                session_chunks=len(session_docs),
+                plan_steps=len(input.get("advanced_step_outputs", []) or []),
+            )
+            return {"final_answer": final_answer, "citations": citations, "error": error}
+
+        model_id = configurable.get("model_id")
+        llm = get_llm(model_id=model_id, temperature=0.0)
+
+        critical = False
+        claims = []
+        try:
+            check_prompt = PromptTemplate(
+                input_variables=["user_request", "final_answer"],
+                template=apply_prompt_profile(
+                    ADVANCED_ANALYSIS_RISK_CHECK_TEMPLATE, config=config
+                ),
+            ).format(
+                user_request=user_request,
+                final_answer=final_answer,
+            )
+            check_response = llm.invoke([HumanMessage(content=check_prompt)]).content
+            parsed = extract_json_from_text(check_response)
+            critical = bool(parsed.get("critical_negative_findings", False))
+            claims = self._normalize_claims(parsed.get("claims_to_validate", []))
+        except Exception as exc:
+            logger.warning("Risk validation screening failed: %s", exc)
+
+        section_title = labels["risk_validation_title"]
+        validation_text = labels["risk_validation_no_critical"]
+        kb_docs = []
+
+        if critical:
+            if session_only:
+                validation_text = labels["risk_validation_skipped_session_only"]
+            else:
+                try:
+                    kb_top_k = int(
+                        configurable.get(
+                            "advanced_analysis_risk_validation_kb_top_k",
+                            ADVANCED_ANALYSIS_RISK_VALIDATION_KB_TOP_K,
+                        )
+                    )
+                    kb_top_k = max(1, kb_top_k)
+                    query = self._build_kb_query(user_request, claims)
+                    kb_docs = AdvancedAnalysisRunner()._kb_search_docs(
+                        query=query,
+                        collection_name=configurable.get("collection_name", "UNKNOWN"),
+                        top_k=kb_top_k,
+                    )
+                    kb_context = AdvancedAnalysisRunner._format_kb_context(
+                        kb_docs, max_chars=6000
+                    )
+                    validate_prompt = PromptTemplate(
+                        input_variables=["user_request", "claims", "kb_context"],
+                        template=apply_prompt_profile(
+                            ADVANCED_ANALYSIS_RISK_VALIDATION_TEMPLATE, config=config
+                        ),
+                    ).format(
+                        user_request=user_request,
+                        claims=self._format_claims_for_prompt(claims),
+                        kb_context=kb_context,
+                    )
+                    validation_text = (
+                        llm.invoke([HumanMessage(content=validate_prompt)]).content or ""
+                    ).strip()
+                    citations.extend(self._kb_validation_citations(kb_docs))
+                except Exception as exc:
+                    logger.warning("Risk validation KB check failed: %s", exc)
+                    validation_text = "Risk validation could not be completed due to a transient issue."
+
+        final_answer_out = (
+            final_answer
+            + f"\n\n---\n\n## {section_title}\n"
+            + validation_text
+        )
+        _log_advanced_event(
+            "risk_validation.completed",
+            resolved_language=output_lang,
+            session_only=session_only,
+            kb_enabled=not session_only,
+            session_chunks=len(session_docs),
+            plan_steps=len(input.get("advanced_step_outputs", []) or []),
+            critical_findings=critical,
+            kb_docs=len(kb_docs),
+        )
+        return {"final_answer": final_answer_out, "citations": citations, "error": error}

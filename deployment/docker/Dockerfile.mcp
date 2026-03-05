@@ -19,6 +19,7 @@ RUN python -m pip install --upgrade pip && \
 COPY core /app/core
 COPY mcp_servers /app/mcp_servers
 COPY config.py /app/config.py
+COPY prompt_profiles.py /app/prompt_profiles.py
 
 EXPOSE 8010
 

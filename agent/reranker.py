@@ -36,6 +36,7 @@ from py_zipkin.zipkin import zipkin_span
 from agent.agent_state import State
 from agent.prompts import (
     RERANKER_TEMPLATE,
+    apply_prompt_profile,
 )
 from core.oci_models import get_llm
 from core.retry_utils import run_with_retry
@@ -136,7 +137,7 @@ class Reranker(Runnable):
         ]
 
     @staticmethod
-    def get_reranked_docs(llm, query, retriever_docs):
+    def get_reranked_docs(llm, query, retriever_docs, config=None):
         """
         Rerank documents using LLM based on user request.
 
@@ -148,7 +149,7 @@ class Reranker(Runnable):
 
         _prompt = PromptTemplate(
             input_variables=["query", "chunks"],
-            template=RERANKER_TEMPLATE,
+            template=apply_prompt_profile(RERANKER_TEMPLATE, config=config),
         ).format(query=query, chunks=chunks)
 
         messages = [HumanMessage(content=_prompt)]
@@ -212,9 +213,20 @@ class Reranker(Runnable):
                     # do reranking
                     llm = get_llm(model_id=RERANKER_MODEL_ID, temperature=0.0)
 
-                    reranked_docs = self.get_reranked_docs(
-                        llm, user_request, retriever_docs
-                    )
+                    # Backward compatibility:
+                    # tests or callers may monkeypatch get_reranked_docs with the old
+                    # 3-args signature (llm, query, docs). Prefer the new call with
+                    # config, then fallback to legacy signature only for that case.
+                    try:
+                        reranked_docs = self.get_reranked_docs(
+                            llm, user_request, retriever_docs, config=config
+                        )
+                    except TypeError as exc:
+                        if "unexpected keyword argument 'config'" not in str(exc):
+                            raise
+                        reranked_docs = self.get_reranked_docs(
+                            llm, user_request, retriever_docs
+                        )
 
                 else:
                     reranked_docs = retriever_docs

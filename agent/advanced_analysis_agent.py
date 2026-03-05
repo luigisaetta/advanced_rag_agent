@@ -16,6 +16,7 @@ from agent.advanced_analysis import (
     AdvancedPlanner,
     AdvancedAnalysisRunner,
     AdvancedFinalSynthesis,
+    RiskValidator,
 )
 
 
@@ -23,6 +24,7 @@ def create_advanced_analysis_workflow(
     advanced_planner=None,
     advanced_runner=None,
     advanced_final_synthesis=None,
+    advanced_risk_validator=None,
 ):
     """
     Build and compile the Advanced Analysis subgraph.
@@ -30,15 +32,18 @@ def create_advanced_analysis_workflow(
     planner = advanced_planner or AdvancedPlanner()
     runner = advanced_runner or AdvancedAnalysisRunner()
     final_synthesis = advanced_final_synthesis or AdvancedFinalSynthesis()
+    risk_validator = advanced_risk_validator or RiskValidator()
 
     subgraph = StateGraph(AdvancedAnalysisState)
     subgraph.add_node("Planner", planner)
     subgraph.add_node("AdvancedAnalysis", runner)
     subgraph.add_node("FinalSynthesis", final_synthesis)
+    subgraph.add_node("RiskValidation", risk_validator)
     subgraph.add_edge(START, "Planner")
     subgraph.add_edge("Planner", "AdvancedAnalysis")
     subgraph.add_edge("AdvancedAnalysis", "FinalSynthesis")
-    subgraph.add_edge("FinalSynthesis", END)
+    subgraph.add_edge("FinalSynthesis", "RiskValidation")
+    subgraph.add_edge("RiskValidation", END)
     return subgraph.compile()
 
 
@@ -52,6 +57,7 @@ class AdvancedAnalysisAgent(Runnable):
         advanced_planner=None,
         advanced_runner=None,
         advanced_final_synthesis=None,
+        advanced_risk_validator=None,
     ):
         """
         Initialize the callable advanced-analysis agent.
@@ -60,6 +66,7 @@ class AdvancedAnalysisAgent(Runnable):
             advanced_planner=advanced_planner,
             advanced_runner=advanced_runner,
             advanced_final_synthesis=advanced_final_synthesis,
+            advanced_risk_validator=advanced_risk_validator,
         )
 
     def invoke(self, input_state, config=None, **kwargs):
@@ -81,6 +88,7 @@ def create_advanced_analysis_agent(
     advanced_planner=None,
     advanced_runner=None,
     advanced_final_synthesis=None,
+    advanced_risk_validator=None,
 ):
     """
     Factory for the callable advanced-analysis agent.
@@ -89,4 +97,5 @@ def create_advanced_analysis_agent(
         advanced_planner=advanced_planner,
         advanced_runner=advanced_runner,
         advanced_final_synthesis=advanced_final_synthesis,
+        advanced_risk_validator=advanced_risk_validator,
     )

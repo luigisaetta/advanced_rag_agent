@@ -229,6 +229,8 @@ def _run_case(
             "enable_reranker": enable_reranker,
             "enable_advanced_analysis": False,
             "advanced_analysis_session_only": False,
+            "advanced_analysis_enable_risk_validation": config.ADVANCED_ANALYSIS_ENABLE_RISK_VALIDATION,
+            "advanced_analysis_risk_validation_kb_top_k": config.ADVANCED_ANALYSIS_RISK_VALIDATION_KB_TOP_K,
             "enable_tracing": False,
             "main_language": config.MAIN_LANGUAGE,
             "collection_name": collection_name,

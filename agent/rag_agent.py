@@ -41,6 +41,7 @@ from agent.advanced_analysis import (
     AdvancedPlanner,
     AdvancedAnalysisRunner,
     AdvancedFinalSynthesis,
+    RiskValidator,
 )
 from agent.advanced_analysis_agent import create_advanced_analysis_agent
 from agent.reranker import Reranker
@@ -139,10 +140,12 @@ def create_workflow():
     advanced_planner = AdvancedPlanner()
     advanced_runner = AdvancedAnalysisRunner()
     advanced_final_synthesis = AdvancedFinalSynthesis()
+    advanced_risk_validator = RiskValidator()
     advanced_analysis_flow = create_advanced_analysis_agent(
         advanced_planner=advanced_planner,
         advanced_runner=advanced_runner,
         advanced_final_synthesis=advanced_final_synthesis,
+        advanced_risk_validator=advanced_risk_validator,
     )
     # step 7: filter and rerank, using a LLM
     reranker = Reranker()

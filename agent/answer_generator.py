@@ -37,6 +37,7 @@ from core.oci_models import get_llm
 from core.retry_utils import stream_with_retry
 from agent.prompts import (
     ANSWER_PROMPT_TEMPLATE,
+    apply_prompt_profile,
 )
 
 from core.utils import get_console_logger
@@ -106,7 +107,7 @@ class AnswerGenerator(Runnable):
 
             system_prompt = PromptTemplate(
                 input_variables=["context"],
-                template=ANSWER_PROMPT_TEMPLATE,
+                template=apply_prompt_profile(ANSWER_PROMPT_TEMPLATE, config=config),
             ).format(context=_context)
 
             messages = [

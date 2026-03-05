@@ -25,6 +25,7 @@ COPY ui /app/ui
 COPY pages /app/pages
 COPY assistant_ui.py /app/assistant_ui.py
 COPY config.py /app/config.py
+COPY prompt_profiles.py /app/prompt_profiles.py
 COPY config_private_template.py /app/config_private_template.py
 
 EXPOSE 8501

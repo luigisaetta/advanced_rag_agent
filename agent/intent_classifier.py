@@ -16,7 +16,7 @@ from langchain_core.prompts import PromptTemplate
 from py_zipkin.zipkin import zipkin_span
 
 from agent.agent_state import State
-from agent.prompts import INTENT_CLASSIFIER_TEMPLATE
+from agent.prompts import INTENT_CLASSIFIER_TEMPLATE, apply_prompt_profile
 from core.oci_models import get_llm
 from core.utils import get_console_logger, extract_json_from_text
 from config import INTENT_MODEL_ID, AGENT_NAME
@@ -84,7 +84,7 @@ class IntentClassifier(Runnable):
             llm = get_llm(model_id=INTENT_MODEL_ID, temperature=0)
             prompt = PromptTemplate(
                 input_variables=["user_request"],
-                template=INTENT_CLASSIFIER_TEMPLATE,
+                template=apply_prompt_profile(INTENT_CLASSIFIER_TEMPLATE, config=config),
             ).format(user_request=user_request)
 
             response = llm.invoke([HumanMessage(content=prompt)]).content

@@ -32,7 +32,7 @@ from langchain_core.prompts import PromptTemplate
 from py_zipkin.zipkin import zipkin_span
 
 from agent.agent_state import State
-from agent.prompts import REFORMULATE_PROMPT_TEMPLATE
+from agent.prompts import REFORMULATE_PROMPT_TEMPLATE, apply_prompt_profile
 from core.oci_models import get_llm
 from core.utils import get_console_logger
 from config import DEBUG, AGENT_NAME
@@ -73,7 +73,9 @@ class QueryRewriter(Runnable):
 
                 _prompt_template = PromptTemplate(
                     input_variables=["user_request", "chat_history"],
-                    template=REFORMULATE_PROMPT_TEMPLATE,
+                    template=apply_prompt_profile(
+                        REFORMULATE_PROMPT_TEMPLATE, config=config
+                    ),
                 )
 
                 prompt = _prompt_template.format(

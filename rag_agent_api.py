@@ -15,7 +15,14 @@ from pydantic import BaseModel
 from agent.rag_agent import create_workflow
 from agent.agent_state import State
 from core.utils import get_console_logger
-from config import DEBUG, DEFAULT_COLLECTION, LLM_MODEL_ID
+from config import (
+    DEBUG,
+    DEFAULT_COLLECTION,
+    LLM_MODEL_ID,
+    PROMPT_PROFILE,
+    ADVANCED_ANALYSIS_ENABLE_RISK_VALIDATION,
+    ADVANCED_ANALYSIS_RISK_VALIDATION_KB_TOP_K,
+)
 
 MEDIA_TYPE = "application/json"
 
@@ -95,10 +102,13 @@ async def invoke(request: InvokeRequest):
             "model_id": LLM_MODEL_ID,
             "enable_reranker": True,
             "advanced_analysis_session_only": False,
+            "advanced_analysis_enable_risk_validation": ADVANCED_ANALYSIS_ENABLE_RISK_VALIDATION,
+            "advanced_analysis_risk_validation_kb_top_k": ADVANCED_ANALYSIS_RISK_VALIDATION_KB_TOP_K,
             "enable_tracing": False,
             "collection_name": DEFAULT_COLLECTION,
             "thread_id": _thread_id,
             "main_language": "same as the question",
+            "prompt_profile": PROMPT_PROFILE,
         }
     }
 

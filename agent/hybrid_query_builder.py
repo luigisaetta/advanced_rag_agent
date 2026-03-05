@@ -24,7 +24,7 @@ from langchain_core.prompts import PromptTemplate
 from py_zipkin.zipkin import zipkin_span
 
 from agent.agent_state import State
-from agent.prompts import HYBRID_KB_QUERY_TEMPLATE
+from agent.prompts import HYBRID_KB_QUERY_TEMPLATE, apply_prompt_profile
 from core.oci_models import get_llm
 from core.utils import get_console_logger
 from config import (
@@ -97,7 +97,7 @@ class HybridQueryBuilder(Runnable):
                     "standalone_question",
                     "session_snippets",
                 ],
-                template=HYBRID_KB_QUERY_TEMPLATE,
+                template=apply_prompt_profile(HYBRID_KB_QUERY_TEMPLATE, config=config),
             ).format(
                 user_request=input.get("user_request", ""),
                 standalone_question=standalone_question,

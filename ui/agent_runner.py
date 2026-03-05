@@ -27,7 +27,7 @@ import config
 from agent.rag_agent import State
 from core.transport import http_transport
 from core.utils import redact_agent_config_for_log
-from ui.rendering import render_answer, render_references
+from ui.rendering import render_advanced_plan, render_answer, render_references
 from ui.session import add_to_chat_history, get_chat_history
 
 
@@ -43,6 +43,7 @@ def _build_agent_config(progress_callback):
             "advanced_analysis_session_only": False,
             "enable_tracing": config.ENABLE_TRACING,
             "main_language": config.MAIN_LANGUAGE,
+            "prompt_profile": st.session_state.prompt_profile,
             "collection_name": st.session_state.collection_name,
             "thread_id": st.session_state.thread_id,
             "session_pdf_vector_store": st.session_state.session_pdf_vector_store,
@@ -51,6 +52,9 @@ def _build_agent_config(progress_callback):
             "advanced_analysis_max_actions": config.ADVANCED_ANALYSIS_MAX_ACTIONS,
             "advanced_analysis_kb_top_k": config.ADVANCED_ANALYSIS_KB_TOP_K,
             "advanced_analysis_step_max_words": config.ADVANCED_ANALYSIS_STEP_MAX_WORDS,
+            # Runtime toggle from UI (default sourced from config).
+            "advanced_analysis_enable_risk_validation": st.session_state.enable_risk_validation,
+            "advanced_analysis_risk_validation_kb_top_k": config.ADVANCED_ANALYSIS_RISK_VALIDATION_KB_TOP_K,
             "progress_callback": progress_callback,
         }
     }
@@ -123,6 +127,9 @@ def handle_question(question: str, logger) -> None:
                     if key == "AdvancedAnalysisFlow":
                         st.sidebar.header("References:")
                         render_references(value.get("citations", []))
+                        # Show planner output for explainability/debugging.
+                        # The subagent returns the normalized plan in the node payload.
+                        render_advanced_plan(value.get("advanced_plan", []))
 
         if error is None:
             answer_payload = results[-1]["final_answer"]

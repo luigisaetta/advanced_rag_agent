@@ -42,8 +42,18 @@ def init_session_state() -> None:
         st.session_state.enable_reranker = True
     if "enable_advanced_analysis" not in st.session_state:
         st.session_state.enable_advanced_analysis = False
+    if "enable_risk_validation" not in st.session_state:
+        st.session_state.enable_risk_validation = (
+            config.ADVANCED_ANALYSIS_ENABLE_RISK_VALIDATION
+        )
     if "collection_name" not in st.session_state:
         st.session_state.collection_name = config.COLLECTION_LIST[0]
+    if "prompt_profile" not in st.session_state:
+        st.session_state.prompt_profile = (
+            config.PROMPT_PROFILE
+            if config.PROMPT_PROFILE in config.PROMPT_PROFILES
+            else "general"
+        )
     if "get_feedback" not in st.session_state:
         st.session_state.get_feedback = False
     if "session_pdf_name" not in st.session_state:

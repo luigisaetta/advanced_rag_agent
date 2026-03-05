@@ -24,9 +24,57 @@ Warnings:
     This module is in development, may change in future versions.
 """
 
+from config import PROMPT_PROFILE, PROMPT_PROFILES
+
+_PROFILE_PLACEHOLDER = "<<DOMAIN_PROFILE>>"
+
+
+def resolve_prompt_profile_name(config=None, explicit_profile: str = None) -> str:
+    """
+    Resolve the active prompt profile from runtime config or fallback defaults.
+    """
+    if explicit_profile:
+        profile = str(explicit_profile).strip().lower()
+    else:
+        configurable = (config or {}).get("configurable", {})
+        profile = str(configurable.get("prompt_profile", PROMPT_PROFILE)).strip().lower()
+
+    if profile in PROMPT_PROFILES:
+        return profile
+    return "general"
+
+
+def build_domain_profile_block(profile_name: str) -> str:
+    """
+    Build a compact domain-profile section to inject in prompts.
+    """
+    profile = PROMPT_PROFILES.get(profile_name, PROMPT_PROFILES["general"])
+    return (
+        "Domain profile:\n"
+        f"- Active profile: {profile_name}\n"
+        f"- Profile label: {profile['name']}\n"
+        f"- Guidance: {profile['instructions']}\n"
+    )
+
+
+def apply_prompt_profile(
+    template: str, config=None, explicit_profile: str = None
+) -> str:
+    """
+    Inject domain-profile guidance into a prompt template.
+    """
+    profile_name = resolve_prompt_profile_name(config, explicit_profile)
+    block = build_domain_profile_block(profile_name)
+    if _PROFILE_PLACEHOLDER in template:
+        return template.replace(_PROFILE_PLACEHOLDER, block)
+    return f"{block}\n{template}"
+
+
 REFORMULATE_PROMPT_TEMPLATE = """
 You're an AI assistant. Given a user request and a chat history reformulate the user question 
 in a standalone question using the chat history.
+
+<<DOMAIN_PROFILE>>
 
 Constraints:
 - return only the standalone question, do not add any other text or comment.
@@ -42,6 +90,8 @@ You're a helpful AI assistant. Your task is to answer user questions using only 
 provided in the context and the history of previous messages.
 Respond in a friendly and polite tone at all times.
 
+<<DOMAIN_PROFILE>>
+
 ## Constraints:
 - Answer based only on the provided context.
 - If the context is partial, provide a best-effort answer grounded in available evidence,
@@ -56,7 +106,11 @@ Context: {context}
 
 RERANKER_TEMPLATE = """
 You are an intelligent ranking assistant. Your task is to rank and filter text chunks 
-based on their relevance to a given user query. You will receive:
+based on their relevance to a given user query. 
+
+<<DOMAIN_PROFILE>>
+
+You will receive:
 
 1. A user query.
 2. A list of text chunks.
@@ -101,6 +155,8 @@ Ensure that only relevant chunks are included in the output. If no chunk is rele
 INTENT_CLASSIFIER_TEMPLATE = """
 You are an intent classifier for a RAG agent.
 
+<<DOMAIN_PROFILE>>
+
 Classify the user request into exactly one intent:
 - GLOBAL_KB: answer should come from the global knowledge base.
 - SESSION_DOC: answer should come only from the uploaded in-session PDF.
@@ -142,6 +198,8 @@ User request:
 HYBRID_KB_QUERY_TEMPLATE = """
 You are helping a RAG system build a knowledge-base search query.
 
+<<DOMAIN_PROFILE>>
+
 Task:
 - Rewrite the standalone question into a KB-focused query.
 - Use the uploaded document excerpts to inject specific entities, constraints, and facts.
@@ -165,6 +223,8 @@ Uploaded document excerpts:
 
 ADVANCED_ANALYSIS_PLANNER_TEMPLATE = """
 You are an expert planner for advanced document analysis.
+
+<<DOMAIN_PROFILE>>
 
 You receive:
 - a user request
@@ -208,6 +268,8 @@ Session PDF chunks (full set):
 ADVANCED_ANALYSIS_STEP_TEMPLATE = """
 You are executing one step of an advanced analysis plan.
 
+<<DOMAIN_PROFILE>>
+
 Write a concise, evidence-based result for this step using:
 - selected chunks from the uploaded PDF
 - optional knowledge-base excerpts
@@ -240,6 +302,8 @@ KB evidence (retrieved docs):
 ADVANCED_ANALYSIS_SYNTHESIS_TEMPLATE = """
 You are a senior analyst writing the final synthesis of a multi-step analysis.
 
+<<DOMAIN_PROFILE>>
+
 Given:
 - the original user request
 - the detailed outputs of each executed step
@@ -261,4 +325,76 @@ User request:
 
 Step outputs:
 {step_outputs}
+"""
+
+
+ADVANCED_ANALYSIS_RISK_CHECK_TEMPLATE = """
+You are a risk screening assistant for a document analysis report.
+
+<<DOMAIN_PROFILE>>
+
+Given:
+- the user request
+- the current final analysis text
+
+Task:
+- detect whether the report contains critical negative findings that should be validated.
+- if yes, extract concise claims to validate.
+
+Critical negative findings include material risks such as:
+- severe non-compliance,
+- termination blockers,
+- major penalties/liabilities,
+- safety/security/legal blockers.
+
+Output rules:
+- return ONLY valid JSON.
+- use this exact schema:
+{{
+  "critical_negative_findings": true,
+  "claims_to_validate": ["claim 1", "claim 2"]
+}}
+
+If no critical negative findings are present, return:
+{{
+  "critical_negative_findings": false,
+  "claims_to_validate": []
+}}
+
+User request:
+{user_request}
+
+Final analysis:
+{final_answer}
+"""
+
+
+ADVANCED_ANALYSIS_RISK_VALIDATION_TEMPLATE = """
+You are validating critical negative findings using provided KB evidence.
+
+<<DOMAIN_PROFILE>>
+
+Given:
+- the user request
+- claims that need validation
+- KB evidence snippets
+
+Task:
+- assess whether each claim is supported, partially supported, or not supported.
+- keep the answer concise and evidence-based.
+- if evidence is insufficient, state that explicitly.
+
+Constraints:
+- use only provided KB evidence.
+- do not add headings/titles.
+- answer in the same language as the user request.
+
+User request:
+{user_request}
+
+Claims to validate:
+{claims}
+
+KB evidence:
+{kb_context}
 """

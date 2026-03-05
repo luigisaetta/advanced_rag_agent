@@ -53,6 +53,23 @@ def render_sidebar(reset_callback):
             "Collection name",
             config.COLLECTION_LIST,
         )
+        profile_keys = list(config.PROMPT_PROFILES.keys())
+        st.session_state.prompt_profile = st.selectbox(
+            "Prompt profile",
+            profile_keys,
+            index=(
+                profile_keys.index(st.session_state.prompt_profile)
+                if st.session_state.prompt_profile in profile_keys
+                else 0
+            ),
+            format_func=lambda key: (
+                f"{config.PROMPT_PROFILES[key]['name']} ({key})"
+            ),
+            help=(
+                "Select the domain framing used across prompts "
+                "(classification, retrieval guidance, answer generation)."
+            ),
+        )
 
         st.session_state.enable_reranker = st.checkbox(
             "Enable Reranker", value=True, disabled=False
@@ -63,6 +80,15 @@ def render_sidebar(reset_callback):
 
     st.session_state.enable_advanced_analysis = st.sidebar.checkbox(
         "Advanced Analysis", value=False, disabled=False
+    )
+    st.session_state.enable_risk_validation = st.sidebar.checkbox(
+        "Risk Validation",
+        value=st.session_state.enable_risk_validation,
+        disabled=not st.session_state.enable_advanced_analysis,
+        help=(
+            "Run an additional post-synthesis validation step. "
+            "If critical negative findings are detected, it may query KB (unless session-only mode is active)."
+        ),
     )
 
     st.sidebar.header("Session PDF (in-memory)")
