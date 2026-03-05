@@ -37,7 +37,9 @@ def resolve_prompt_profile_name(config=None, explicit_profile: str = None) -> st
         profile = str(explicit_profile).strip().lower()
     else:
         configurable = (config or {}).get("configurable", {})
-        profile = str(configurable.get("prompt_profile", PROMPT_PROFILE)).strip().lower()
+        profile = (
+            str(configurable.get("prompt_profile", PROMPT_PROFILE)).strip().lower()
+        )
 
     if profile in PROMPT_PROFILES:
         return profile

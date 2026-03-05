@@ -1,3 +1,5 @@
+"""Unit tests for hybrid docs merge behavior."""
+
 from agent.hybrid_docs_merge import HybridDocsMerge
 
 

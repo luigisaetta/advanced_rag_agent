@@ -7,8 +7,8 @@ License: MIT
 Description: Unit tests for prompt templates placeholders used by reformulation, reranking, and answering steps.
 """
 
-import agent.prompts as prompts
 from langchain_core.prompts import PromptTemplate
+import agent.prompts as prompts
 
 
 def test_reformulate_prompt_has_required_placeholders():

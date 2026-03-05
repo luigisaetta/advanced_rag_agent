@@ -11,7 +11,7 @@ from types import SimpleNamespace
 
 import pytest
 
-import core.utils as utils
+from core import utils
 
 
 def test_extract_json_from_text_success():

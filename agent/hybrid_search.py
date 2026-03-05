@@ -17,9 +17,9 @@ License:
     This code is released under the MIT License.
 """
 
-import config as app_config
 from langchain_core.runnables import Runnable
 
+import config as app_config
 from agent.agent_state import State
 from core.bm25_cache import get_bm25_cache
 from core.utils import get_console_logger

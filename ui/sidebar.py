@@ -62,9 +62,7 @@ def render_sidebar(reset_callback):
                 if st.session_state.prompt_profile in profile_keys
                 else 0
             ),
-            format_func=lambda key: (
-                f"{config.PROMPT_PROFILES[key]['name']} ({key})"
-            ),
+            format_func=lambda key: (f"{config.PROMPT_PROFILES[key]['name']} ({key})"),
             help=(
                 "Select the domain framing used across prompts "
                 "(classification, retrieval guidance, answer generation)."

@@ -16,12 +16,13 @@ License:
     This code is released under the MIT License.
 """
 
+import re
+import time
+
 from langchain_core.runnables import Runnable
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import PromptTemplate
 import oracledb
-import time
-import re
 from py_zipkin.zipkin import zipkin_span
 
 from agent.advanced_analysis_state import AdvancedAnalysisState
@@ -1129,7 +1130,11 @@ class RiskValidator(Runnable):
                 session_chunks=len(session_docs),
                 plan_steps=len(input.get("advanced_step_outputs", []) or []),
             )
-            return {"final_answer": final_answer, "citations": citations, "error": error}
+            return {
+                "final_answer": final_answer,
+                "citations": citations,
+                "error": error,
+            }
 
         model_id = configurable.get("model_id")
         llm = get_llm(model_id=model_id, temperature=0.0)
@@ -1189,7 +1194,8 @@ class RiskValidator(Runnable):
                         kb_context=kb_context,
                     )
                     validation_text = (
-                        llm.invoke([HumanMessage(content=validate_prompt)]).content or ""
+                        llm.invoke([HumanMessage(content=validate_prompt)]).content
+                        or ""
                     ).strip()
                     citations.extend(self._kb_validation_citations(kb_docs))
                 except Exception as exc:
@@ -1197,9 +1203,7 @@ class RiskValidator(Runnable):
                     validation_text = "Risk validation could not be completed due to a transient issue."
 
         final_answer_out = (
-            final_answer
-            + f"\n\n---\n\n## {section_title}\n"
-            + validation_text
+            final_answer + f"\n\n---\n\n## {section_title}\n" + validation_text
         )
         _log_advanced_event(
             "risk_validation.completed",
@@ -1211,4 +1215,8 @@ class RiskValidator(Runnable):
             critical_findings=critical,
             kb_docs=len(kb_docs),
         )
-        return {"final_answer": final_answer_out, "citations": citations, "error": error}
+        return {
+            "final_answer": final_answer_out,
+            "citations": citations,
+            "error": error,
+        }

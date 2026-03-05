@@ -55,7 +55,9 @@ def test_planner_normalize_plan_forces_no_kb_in_session_only():
 def test_runner_session_only_never_calls_kb_search(monkeypatch):
     """Ensure KB retrieval is skipped even when plan requests it."""
     runner = AdvancedAnalysisRunner()
-    monkeypatch.setattr("agent.advanced_analysis.get_llm", lambda **_kwargs: _FakeLlm("ok"))
+    monkeypatch.setattr(
+        "agent.advanced_analysis.get_llm", lambda **_kwargs: _FakeLlm("ok")
+    )
 
     calls = {"kb": 0}
 
@@ -188,7 +190,8 @@ def test_final_synthesis_uses_document_language_labels_in_session_only(monkeypat
     """Ensure final synthesis section title is localized from document language."""
     node = AdvancedFinalSynthesis()
     monkeypatch.setattr(
-        "agent.advanced_analysis.get_llm", lambda **_kwargs: _FakeLlm("sintesi conclusiva")
+        "agent.advanced_analysis.get_llm",
+        lambda **_kwargs: _FakeLlm("sintesi conclusiva"),
     )
 
     input_state = {
@@ -215,4 +218,3 @@ def test_final_synthesis_uses_document_language_labels_in_session_only(monkeypat
     out = node.invoke(input_state, config=config)
     assert "## Sintesi Finale" in out["final_answer"]
     assert "## Final Synthesis" not in out["final_answer"]
-

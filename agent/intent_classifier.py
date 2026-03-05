@@ -84,7 +84,9 @@ class IntentClassifier(Runnable):
             llm = get_llm(model_id=INTENT_MODEL_ID, temperature=0)
             prompt = PromptTemplate(
                 input_variables=["user_request"],
-                template=apply_prompt_profile(INTENT_CLASSIFIER_TEMPLATE, config=config),
+                template=apply_prompt_profile(
+                    INTENT_CLASSIFIER_TEMPLATE, config=config
+                ),
             ).format(user_request=user_request)
 
             response = llm.invoke([HumanMessage(content=prompt)]).content

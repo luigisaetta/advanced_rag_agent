@@ -86,7 +86,9 @@ def test_risk_validation_critical_findings_calls_kb_when_not_session_only(monkey
             }
         ]
 
-    monkeypatch.setattr("agent.advanced_analysis.AdvancedAnalysisRunner._kb_search_docs", _kb_search)
+    monkeypatch.setattr(
+        "agent.advanced_analysis.AdvancedAnalysisRunner._kb_search_docs", _kb_search
+    )
 
     out = node.invoke(
         _base_input_state(),
@@ -103,4 +105,3 @@ def test_risk_validation_critical_findings_calls_kb_when_not_session_only(monkey
     assert calls["kb"] == 1
     assert "## Risk Validation" in out["final_answer"]
     assert "Validation result from KB evidence." in out["final_answer"]
-

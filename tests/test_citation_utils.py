@@ -7,8 +7,8 @@ License: MIT
 Description: Unit tests for citation URL and page number parsing helpers.
 """
 
-import core.citation_utils as citation_utils
 import config
+from core import citation_utils
 
 
 def test_parse_page_number_from_int():
