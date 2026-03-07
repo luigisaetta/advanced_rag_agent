@@ -107,26 +107,27 @@ Context: {context}
 """
 
 RERANKER_TEMPLATE = """
-You are an intelligent ranking assistant. Your task is to rank and filter text chunks 
-based on their relevance to a given user query. 
+You are an intelligent ranking assistant. Rank chunks by relevance to the query.
 
 <<DOMAIN_PROFILE>>
 
-You will receive:
+Critical objective:
+- Preserve useful evidence coverage. Prefer false positives over false negatives.
+- Do NOT over-filter.
 
-1. A user query.
-2. A list of text chunks.
+Rules:
+1) Include every chunk that is directly relevant OR potentially supportive/contextual.
+2) Exclude only chunks that are clearly unrelated.
+3) If at least one chunk is relevant, return at least 4 chunks (or all chunks if fewer than 4).
+4) If relevance is uncertain, keep the chunk with a lower score rather than dropping it.
+5) Keep ranking by usefulness for answering the query, not only by keyword overlap.
+6) Return JSON only, with index and score.
 
-Your goal is to:
-- Rank the text chunks in order of relevance to the user query.
-- Remove any text chunks that are completely irrelevant to the query.
-
-### Instructions:
-- Assign a **relevance score** to each chunk based on how well it answers or relates to the query.
-- Return only the **top-ranked** chunks, filtering out those that are completely irrelevant.
-- The output should be a **sorted list** of relevant chunks, from most to least relevant.
-- Return only the JSON, don't add other text.
-- Don't return the text of the chunk, only the index and the score.
+Scoring guide (0.0-1.0):
+- 0.85-1.00: directly answers key parts
+- 0.60-0.84: strongly supportive evidence
+- 0.35-0.59: partially relevant but potentially useful
+- 0.00-0.34: clearly unrelated (exclude unless uncertainty exists)
 
 ### Input Format:
 User Query:
@@ -150,7 +151,7 @@ Where:
 - "index" is the original position of the chunk in the input list. Index starts from 0.
 - "score" is the relevance score (higher is better).
 
-Ensure that only relevant chunks are included in the output. If no chunk is relevant, return an empty list.
+If all chunks are clearly unrelated, return an empty list.
 
 """
 
@@ -220,6 +221,67 @@ Standalone question:
 
 Uploaded document excerpts:
 {session_snippets}
+"""
+
+POST_ANSWER_EVALUATION_TEMPLATE = """
+You are evaluating a RAG answer quality using a strict decision tree.
+
+<<DOMAIN_PROFILE>>
+
+Goal:
+- Identify the most likely primary root cause among:
+  - NO_ISSUE
+  - RETRIEVAL
+  - RERANK
+  - GENERATION
+
+Decision tree:
+1) If retrieved and reranked evidence are relevant and the final answer is grounded/correct, choose NO_ISSUE.
+2) Else, if retrieved evidence is missing or mostly off-topic for the user request, choose RETRIEVAL.
+3) Else, if retrieval contains relevant evidence but reranker context drops or under-prioritizes key evidence, choose RERANK.
+4) Else, choose GENERATION only if there is clear, direct evidence that reranker context is sufficient but the final answer is incorrect/incomplete/not grounded.
+5) If evidence is ambiguous or insufficient to prove RETRIEVAL, RERANK, or GENERATION, choose NO_ISSUE.
+
+Important evidence handling rules:
+- Use source inventories as authoritative metadata of which sources/pages were retrieved.
+- Do NOT claim that a source is missing if it appears in the corresponding inventory.
+- Base the root-cause decision on topical relevance and evidence coverage, not on guesswork.
+- Do NOT require verbatim sentence matches: paraphrased support counts as grounded evidence.
+- Be conservative with blame assignment: default to NO_ISSUE unless strong evidence supports a specific error class.
+
+Return ONLY valid JSON:
+{{
+  "root_cause": "NO_ISSUE|RETRIEVAL|RERANK|GENERATION",
+  "reason": "short evidence-based reason",
+  "confidence": 0.0
+}}
+
+Confidence rules:
+- Return a numeric value between 0.0 and 1.0.
+- Use lower confidence when evidence is partial/ambiguous.
+- Use higher confidence only when evidence strongly supports the selected root cause.
+- `reason` must be written in English only.
+
+User request:
+{user_request}
+
+Standalone question:
+{standalone_question}
+
+Retrieved source inventory:
+{retriever_sources}
+
+Reranker source inventory:
+{reranker_sources}
+
+Retrieved docs (before reranker):
+{retriever_context}
+
+Docs used for final answer (after reranker):
+{reranker_context}
+
+Final answer:
+{final_answer}
 """
 
 

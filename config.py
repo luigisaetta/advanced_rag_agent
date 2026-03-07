@@ -90,6 +90,7 @@ if LLM_REGION == "us-chicago-1":
     MODEL_LIST = [
         "openai.gpt-oss-120b",
         "openai.gpt-5.2",
+        "openai.gpt-5.4",
         "google.gemini-2.5-pro",
         "meta.llama-3.3-70b-instruct",
         "cohere.command-a-03-2025",
@@ -98,6 +99,7 @@ else:
     MODEL_LIST = [
         "openai.gpt-oss-120b",
         "openai.gpt-5.2",
+        "openai.gpt-5.4",
         "google.gemini-2.5-pro",
         "meta.llama-3.3-70b-instruct",
         "cohere.command-a-03-2025",
@@ -129,6 +131,11 @@ ADVANCED_ANALYSIS_STEP_MAX_WORDS = 450
 # optional post-synthesis risk-validation step (default disabled)
 ADVANCED_ANALYSIS_ENABLE_RISK_VALIDATION = False
 ADVANCED_ANALYSIS_RISK_VALIDATION_KB_TOP_K = 4
+
+# post-answer evaluation (log-only) for hybrid retrieval without session PDF
+POST_ANSWER_EVALUATION_ENABLED = True
+POST_ANSWER_EVALUATION_MODEL_ID = "openai.gpt-5.4"
+POST_ANSWER_EVALUATION_MAX_CHARS = 12000
 
 # BM25 cache warms up from all the collections in this list
 COLLECTION_LIST = ["COLL01", "CONTRATTI", "BOOKS"]

@@ -399,6 +399,36 @@ def _score(results: List[Dict[str, Any]]) -> Dict[str, Any]:
     }
 
 
+def _print_run_configuration(args, dataset_path: Path, out_path: Path, rows_count: int) -> None:
+    """Print the effective run configuration at startup."""
+    print("=" * 72)
+    print("RAG REGRESSION EVALUATION RUN")
+    print("=" * 72)
+    print("")
+
+    run_cfg = {
+        "dataset": str(dataset_path),
+        "out": str(out_path),
+        "cases_to_run": rows_count,
+        "model_id_answer": args.model_id,
+        "model_id_intent_classifier": config.INTENT_MODEL_ID,
+        "model_id_reranker": config.RERANKER_MODEL_ID,
+        "model_id_vlm_session_pdf": config.VLM_MODEL_ID,
+        "collection_name": args.collection_name,
+        "enable_reranker": not args.disable_reranker,
+        "enable_advanced_analysis": False,
+        "advanced_analysis_session_only": False,
+        "advanced_analysis_enable_risk_validation": config.ADVANCED_ANALYSIS_ENABLE_RISK_VALIDATION,
+        "advanced_analysis_risk_validation_kb_top_k": config.ADVANCED_ANALYSIS_RISK_VALIDATION_KB_TOP_K,
+        "main_language": config.MAIN_LANGUAGE,
+        "session_pdf_max_pages": config.SESSION_PDF_MAX_PAGES,
+        "post_answer_evaluation_enabled": config.POST_ANSWER_EVALUATION_ENABLED,
+    }
+    print("Run configuration:")
+    print(json.dumps(run_cfg, indent=2, ensure_ascii=True))
+    print("")
+
+
 def main() -> None:
     """Main."""
     parser = argparse.ArgumentParser(
@@ -441,6 +471,8 @@ def main() -> None:
     rows = _load_jsonl(dataset_path)
     if args.max_cases > 0:
         rows = rows[: args.max_cases]
+
+    _print_run_configuration(args, dataset_path, out_path, len(rows))
 
     app = create_workflow()
     session_cache: Dict[str, Dict[str, Any]] = {}

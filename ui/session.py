@@ -40,6 +40,10 @@ def init_session_state() -> None:
         )
     if "enable_reranker" not in st.session_state:
         st.session_state.enable_reranker = True
+    if "enable_post_answer_evaluation" not in st.session_state:
+        st.session_state.enable_post_answer_evaluation = (
+            config.POST_ANSWER_EVALUATION_ENABLED
+        )
     if "enable_advanced_analysis" not in st.session_state:
         st.session_state.enable_advanced_analysis = False
     if "enable_risk_validation" not in st.session_state:

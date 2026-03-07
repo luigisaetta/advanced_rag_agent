@@ -19,9 +19,15 @@ from config import (
     DEBUG,
     DEFAULT_COLLECTION,
     LLM_MODEL_ID,
+    EMBED_MODEL_ID,
+    RERANKER_MODEL_ID,
+    TOP_K,
     PROMPT_PROFILE,
     ADVANCED_ANALYSIS_ENABLE_RISK_VALIDATION,
     ADVANCED_ANALYSIS_RISK_VALIDATION_KB_TOP_K,
+    POST_ANSWER_EVALUATION_ENABLED,
+    POST_ANSWER_EVALUATION_MODEL_ID,
+    POST_ANSWER_EVALUATION_MAX_CHARS,
 )
 
 MEDIA_TYPE = "application/json"
@@ -100,6 +106,9 @@ async def invoke(request: InvokeRequest):
     _config = {
         "configurable": {
             "model_id": LLM_MODEL_ID,
+            "embed_model_id": EMBED_MODEL_ID,
+            "reranker_model_id": RERANKER_MODEL_ID,
+            "top_k": TOP_K,
             "enable_reranker": True,
             "advanced_analysis_session_only": False,
             "advanced_analysis_enable_risk_validation": ADVANCED_ANALYSIS_ENABLE_RISK_VALIDATION,
@@ -109,6 +118,9 @@ async def invoke(request: InvokeRequest):
             "thread_id": _thread_id,
             "main_language": "same as the question",
             "prompt_profile": PROMPT_PROFILE,
+            "post_answer_evaluation_enabled": POST_ANSWER_EVALUATION_ENABLED,
+            "post_answer_evaluation_model_id": POST_ANSWER_EVALUATION_MODEL_ID,
+            "post_answer_evaluation_max_chars": POST_ANSWER_EVALUATION_MAX_CHARS,
         }
     }
 

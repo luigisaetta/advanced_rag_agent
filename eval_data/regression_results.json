@@ -1,22 +1,28 @@
 {
-  "dataset": "/Users/lsaetta/Progetti/custom_rag_agent/eval_data/regression_sample.jsonl",
+  "dataset": "/Users/lsaetta/Progetti/advanced_rag_agent/eval_data/file11.jsonl",
   "model_id": "openai.gpt-oss-120b",
   "collection_name": "COLL01",
   "reranker_enabled": true,
   "summary": {
-    "total_cases": 5,
-    "passed_cases": 5,
-    "pass_rate": 1.0,
+    "total_cases": 10,
+    "passed_cases": 8,
+    "pass_rate": 0.8,
     "intent_ok_rate": 1.0,
     "sources_ok_rate": 1.0,
-    "citations_ok_rate": 1.0,
+    "citations_ok_rate": 0.8,
+    "citations_recall_avg": 0.8,
+    "citations_recall_micro": 0.8,
+    "citations_recall_cases": 10,
+    "reranker_docs_avg": 5.1,
+    "reranker_docs_min": 4,
+    "reranker_docs_max": 10,
     "must_contain_ok_rate": 1.0,
     "errors_count": 0
   },
   "results": [
     {
-      "id": "glob_01",
-      "question": "Puoi definire la classificazione delle dispersioni di Gas",
+      "id": "kb_auto_101",
+      "question": "Qual \u00e8 l\u2019obiettivo della norma riguardo alla sorveglianza degli impianti di ricezione, prima riduzione e misura del gas naturale (REMI)?",
       "session_pdf_path": "",
       "session_pdf_source": "",
       "predicted_intent": "GLOBAL_KB",
@@ -29,64 +35,103 @@
         "kb"
       ],
       "sources_ok": true,
-      "citations_count": 9,
+      "citations_count": 4,
+      "reranker_docs_count": 4,
       "citations_ok": true,
-      "expected_citations": [],
+      "expected_citations": [
+        {
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
+          "page": "1"
+        }
+      ],
       "observed_citations": [
         {
-          "source": "PRG_1_07_LineeGuidaCIG_2020.pdf",
-          "page": "9",
-          "retrieval_type": "semantic"
-        },
-        {
-          "source": "PRG_1_07_LineeGuidaCIG_2020.pdf",
-          "page": "13",
-          "retrieval_type": "semantic+bm25"
-        },
-        {
-          "source": "PRG_1_07_LineeGuidaCIG_2020.pdf",
-          "page": "16",
-          "retrieval_type": "semantic+bm25"
-        },
-        {
-          "source": "PRG_1_07_LineeGuidaCIG_2020.pdf",
-          "page": "12",
-          "retrieval_type": "semantic"
-        },
-        {
-          "source": "PRG_1_07_LineeGuidaCIG_2020.pdf",
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
           "page": "1",
-          "retrieval_type": "semantic"
-        },
-        {
-          "source": "PRG_1_07_LineeGuidaCIG_2020.pdf",
-          "page": "4",
           "retrieval_type": "semantic+bm25"
         },
         {
-          "source": "PRG_1_07_LineeGuidaCIG_2020.pdf",
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
           "page": "5",
-          "retrieval_type": "semantic"
-        },
-        {
-          "source": "PRG_1_07_LineeGuidaCIG_2020.pdf",
-          "page": "17",
           "retrieval_type": "semantic+bm25"
         },
         {
-          "source": "PRG_1_UNI_TR_11860_Aprile2022.pdf",
-          "page": "15",
-          "retrieval_type": "bm25"
+          "source": "PRG_1_UNI_9571-2_2022.pdf",
+          "page": "2",
+          "retrieval_type": "semantic"
+        },
+        {
+          "source": "PRG_1_UNI_9571-2_2022.pdf",
+          "page": "7",
+          "retrieval_type": "semantic"
         }
       ],
       "missing_expected_citations": [],
+      "citations_recall": 1.0,
       "must_contain_ok": true,
       "node_error": null,
       "pass": true
     },
     {
-      "id": "glob_02",
-      "question": "Puoi definire la classificazione delle dispersioni di Gas A1?",
+      "id": "kb_auto_102",
+      "question": "Quali attivit\u00e0 di sorveglianza sono esplicitamente escluse dall\u2019ambito di applicazione della norma (ad esempio aspetti metrologici o impianti specifici)?",
+      "session_pdf_path": "",
+      "session_pdf_source": "",
+      "predicted_intent": "GLOBAL_KB",
+      "expected_intent": "GLOBAL_KB",
+      "intent_ok": true,
+      "observed_sources": [
+        "kb"
+      ],
+      "expected_sources": [
+        "kb"
+      ],
+      "sources_ok": true,
+      "citations_count": 4,
+      "reranker_docs_count": 4,
+      "citations_ok": false,
+      "expected_citations": [
+        {
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
+          "page": "5"
+        }
+      ],
+      "observed_citations": [
+        {
+          "source": "PRG_1_UNI_9571-2_2022.pdf",
+          "page": "7",
+          "retrieval_type": "semantic+bm25"
+        },
+        {
+          "source": "PRG_1_UNI_9571-2_2022.pdf",
+          "page": "3",
+          "retrieval_type": "semantic"
+        },
+        {
+          "source": "PRG_1_UNI_9571-2_2022.pdf",
+          "page": "11",
+          "retrieval_type": "semantic"
+        },
+        {
+          "source": "PRG_1_017-LG-CIG_2017.pdf",
+          "page": "4",
+          "retrieval_type": "bm25"
+        }
+      ],
+      "missing_expected_citations": [
+        {
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
+          "page": "5"
+        }
+      ],
+      "citations_recall": 0.0,
+      "must_contain_ok": true,
+      "node_error": null,
+      "pass": false
+    },
+    {
+      "id": "kb_auto_103",
+      "question": "Come viene definito un \u201cdispositivo di sicurezza del tipo a chiusura\u201d e quando deve interrompere il flusso del gas?",
       "session_pdf_path": "",
       "session_pdf_source": "",
       "predicted_intent": "GLOBAL_KB",
@@ -100,217 +145,82 @@
       ],
       "sources_ok": true,
       "citations_count": 10,
-      "citations_ok": true,
+      "reranker_docs_count": 10,
+      "citations_ok": false,
       "expected_citations": [
         {
-          "source": "PRG_1_07_LineeGuidaCIG_2020.pdf",
-          "page": "9"
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
+          "page": "6"
         }
       ],
       "observed_citations": [
         {
-          "source": "PRG_1_07_LineeGuidaCIG_2020.pdf",
-          "page": "6",
-          "retrieval_type": "semantic"
-        },
-        {
-          "source": "PRG_1_07_LineeGuidaCIG_2020.pdf",
-          "page": "10",
-          "retrieval_type": "semantic+bm25"
-        },
-        {
-          "source": "PRG_1_07_LineeGuidaCIG_2020.pdf",
+          "source": "PRG_1_D.M._16_aprile_2008.pdf",
           "page": "11",
-          "retrieval_type": "semantic+bm25"
+          "retrieval_type": "bm25"
         },
         {
-          "source": "PRG_1_07_LineeGuidaCIG_2020.pdf",
-          "page": "12",
+          "source": "PRG_1_UNI_8827-2.pdf",
+          "page": "9",
           "retrieval_type": "semantic"
         },
         {
-          "source": "PRG_1_07_LineeGuidaCIG_2020.pdf",
-          "page": "18",
-          "retrieval_type": "bm25"
-        },
-        {
-          "source": "PRG_1_07_LineeGuidaCIG_2020.pdf",
-          "page": "14",
+          "source": "PRG_1_UNI_11655_Ottobre2024.pdf",
+          "page": "8",
           "retrieval_type": "semantic+bm25"
         },
         {
-          "source": "PRG_1_07_LineeGuidaCIG_2020.pdf",
-          "page": "16",
+          "source": "PRG_1_Norma_UNI_EN_12186_Novembre2014.pdf",
+          "page": "26",
           "retrieval_type": "semantic+bm25"
         },
         {
-          "source": "PRG_1_07_LineeGuidaCIG_2020.pdf",
-          "page": "17",
+          "source": "PRG_1_UNI_11655_Ottobre2024.pdf",
+          "page": "7",
           "retrieval_type": "bm25"
         },
         {
-          "source": "PRG_1_07_LineeGuidaCIG_2020.pdf",
+          "source": "PRG_1_UNI10619_2_2023.pdf",
+          "page": "9",
+          "retrieval_type": "semantic"
+        },
+        {
+          "source": "PRG_1_UNI_9167-2_Marzo2023.pdf",
+          "page": "23",
+          "retrieval_type": "semantic+bm25"
+        },
+        {
+          "source": "PRG_1_D.M._16_aprile_2008.pdf",
           "page": "13",
           "retrieval_type": "semantic+bm25"
         },
         {
-          "source": "PRG_1_07_LineeGuidaCIG_2020.pdf",
-          "page": "9",
-          "retrieval_type": "semantic+bm25"
-        }
-      ],
-      "missing_expected_citations": [],
-      "must_contain_ok": true,
-      "node_error": null,
-      "pass": true
-    },
-    {
-      "id": "sess_01",
-      "question": "Sintetizza il documento caricato in max 5 bullet points.",
-      "session_pdf_path": "/Users/lsaetta/Desktop/eurogasmet/contratti/contratto_di_fornitura_gas_tecnici_2021_25_controfirmato_def.pdf",
-      "session_pdf_source": "contratto_di_fornitura_gas_tecnici_2021_25_controfirmato_def.pdf",
-      "predicted_intent": "SESSION_DOC",
-      "expected_intent": "SESSION_DOC",
-      "intent_ok": true,
-      "observed_sources": [
-        "session_pdf"
-      ],
-      "expected_sources": [
-        "session_pdf"
-      ],
-      "sources_ok": true,
-      "citations_count": 5,
-      "citations_ok": true,
-      "expected_citations": [],
-      "observed_citations": [
-        {
-          "source": "contratto_di_fornitura_gas_tecnici_2021_25_controfirmato_def.pdf",
-          "page": "2",
-          "retrieval_type": "session_pdf"
-        },
-        {
-          "source": "contratto_di_fornitura_gas_tecnici_2021_25_controfirmato_def.pdf",
-          "page": "3",
-          "retrieval_type": "session_pdf"
-        },
-        {
-          "source": "contratto_di_fornitura_gas_tecnici_2021_25_controfirmato_def.pdf",
-          "page": "1",
-          "retrieval_type": "session_pdf"
-        },
-        {
-          "source": "contratto_di_fornitura_gas_tecnici_2021_25_controfirmato_def.pdf",
-          "page": "4",
-          "retrieval_type": "session_pdf"
-        },
-        {
-          "source": "contratto_di_fornitura_gas_tecnici_2021_25_controfirmato_def.pdf",
-          "page": "5",
-          "retrieval_type": "session_pdf"
-        }
-      ],
-      "missing_expected_citations": [],
-      "must_contain_ok": true,
-      "node_error": null,
-      "pass": true
-    },
-    {
-      "id": "hyb_01",
-      "question": "Analizza il documento caricato ed indica aree di miglioramento in base alla normativa esistente.",
-      "session_pdf_path": "/Users/lsaetta/Desktop/eurogasmet/contratti/contratto_di_fornitura_gas_tecnici_2021_25_controfirmato_def.pdf",
-      "session_pdf_source": "contratto_di_fornitura_gas_tecnici_2021_25_controfirmato_def.pdf",
-      "predicted_intent": "HYBRID",
-      "expected_intent": "HYBRID",
-      "intent_ok": true,
-      "observed_sources": [
-        "kb",
-        "session_pdf"
-      ],
-      "expected_sources": [
-        "kb",
-        "session_pdf"
-      ],
-      "sources_ok": true,
-      "citations_count": 13,
-      "citations_ok": true,
-      "expected_citations": [],
-      "observed_citations": [
-        {
-          "source": "PRG_1_D.Lgs_31_marzo_2023_n.36.pdf",
-          "page": "187",
-          "retrieval_type": "bm25"
-        },
-        {
-          "source": "contratto_di_fornitura_gas_tecnici_2021_25_controfirmato_def.pdf",
-          "page": "3",
-          "retrieval_type": "session_pdf"
-        },
-        {
-          "source": "PRG_1_D.Lgs_31_marzo_2023_n.36.pdf",
-          "page": "330",
-          "retrieval_type": "bm25"
-        },
-        {
-          "source": "PRG_1_D.Lgs_31_marzo_2023_n.36.pdf",
-          "page": "89",
-          "retrieval_type": "bm25"
-        },
-        {
-          "source": "contratto_di_fornitura_gas_tecnici_2021_25_controfirmato_def.pdf",
-          "page": "5",
-          "retrieval_type": "session_pdf"
-        },
-        {
-          "source": "PRG_1_D.Lgs_31_marzo_2023_n.36.pdf",
-          "page": "666",
+          "source": "PRG_1_UNI_8827-2.pdf",
+          "page": "6",
           "retrieval_type": "semantic"
         },
         {
-          "source": "PRG_1_D.Lgs_31_marzo_2023_n.36.pdf",
-          "page": "209",
-          "retrieval_type": "semantic+bm25"
-        },
-        {
-          "source": "PRG_1_D.Lgs_31_marzo_2023_n.36.pdf",
-          "page": "714",
+          "source": "PRG_1_UNI10619_2_2023.pdf",
+          "page": "6",
           "retrieval_type": "semantic"
-        },
-        {
-          "source": "PRG_1_D.Lgs_31_marzo_2023_n.36.pdf",
-          "page": "203",
-          "retrieval_type": "semantic+bm25"
-        },
-        {
-          "source": "PRG_1_011-LG-CIG-2020.pdf",
-          "page": "24",
-          "retrieval_type": "semantic"
-        },
-        {
-          "source": "contratto_di_fornitura_gas_tecnici_2021_25_controfirmato_def.pdf",
-          "page": "4",
-          "retrieval_type": "session_pdf"
-        },
-        {
-          "source": "contratto_di_fornitura_gas_tecnici_2021_25_controfirmato_def.pdf",
-          "page": "2",
-          "retrieval_type": "session_pdf"
-        },
-        {
-          "source": "contratto_di_fornitura_gas_tecnici_2021_25_controfirmato_def.pdf",
-          "page": "1",
-          "retrieval_type": "session_pdf"
         }
       ],
-      "missing_expected_citations": [],
+      "missing_expected_citations": [
+        {
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
+          "page": "6"
+        }
+      ],
+      "citations_recall": 0.0,
       "must_contain_ok": true,
       "node_error": null,
-      "pass": true
+      "pass": false
     },
     {
-      "id": "glob_03",
-      "question": "Definisci le azioni immediate da compiere per una dispersione A1.",
-      "session_pdf_path": "/Users/lsaetta/Desktop/eurogasmet/contratti/contratto_di_fornitura_gas_tecnici_2021_25_controfirmato_def.pdf",
-      "session_pdf_source": "contratto_di_fornitura_gas_tecnici_2021_25_controfirmato_def.pdf",
+      "id": "kb_auto_104",
+      "question": "Quali verifiche devono essere effettuate riguardo all\u2019atmosfera esplosiva durante l\u2019accesso all\u2019impianto per un\u2019attivit\u00e0 di sorveglianza?",
+      "session_pdf_path": "",
+      "session_pdf_source": "",
       "predicted_intent": "GLOBAL_KB",
       "expected_intent": "GLOBAL_KB",
       "intent_ok": true,
@@ -322,36 +232,375 @@
       ],
       "sources_ok": true,
       "citations_count": 4,
+      "reranker_docs_count": 4,
       "citations_ok": true,
       "expected_citations": [
         {
-          "source": "PRG_1_07_LineeGuidaCIG_2020.pdf",
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
+          "page": "9"
+        }
+      ],
+      "observed_citations": [
+        {
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
+          "page": "9",
+          "retrieval_type": "semantic+bm25"
+        },
+        {
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
+          "page": "8",
+          "retrieval_type": "semantic"
+        },
+        {
+          "source": "PRG_1_02-LG-CIG_20180212.pdf",
+          "page": "11",
+          "retrieval_type": "semantic"
+        },
+        {
+          "source": "PRG_1_02-LG-CIG_20180212.pdf",
+          "page": "6",
+          "retrieval_type": "semantic"
+        }
+      ],
+      "missing_expected_citations": [],
+      "citations_recall": 1.0,
+      "must_contain_ok": true,
+      "node_error": null,
+      "pass": true
+    },
+    {
+      "id": "kb_auto_105",
+      "question": "Qual \u00e8 il criterio di accettazione nelle prove di tenuta esterna con liquido schiumogeno basato sulla \u201crottura bolla\u201d?",
+      "session_pdf_path": "",
+      "session_pdf_source": "",
+      "predicted_intent": "GLOBAL_KB",
+      "expected_intent": "GLOBAL_KB",
+      "intent_ok": true,
+      "observed_sources": [
+        "kb"
+      ],
+      "expected_sources": [
+        "kb"
+      ],
+      "sources_ok": true,
+      "citations_count": 4,
+      "reranker_docs_count": 4,
+      "citations_ok": true,
+      "expected_citations": [
+        {
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
+          "page": "9"
+        }
+      ],
+      "observed_citations": [
+        {
+          "source": "PRG_1_UNI_9571-2_2022.pdf",
+          "page": "11",
+          "retrieval_type": "semantic+bm25"
+        },
+        {
+          "source": "PRG_1_UNI10619_1_2023.pdf",
+          "page": "18",
+          "retrieval_type": "semantic"
+        },
+        {
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
+          "page": "9",
+          "retrieval_type": "bm25"
+        },
+        {
+          "source": "PRG_1_UNI_EN_751-1_Novembre1998.pdf",
+          "page": "12",
+          "retrieval_type": "semantic"
+        }
+      ],
+      "missing_expected_citations": [],
+      "citations_recall": 1.0,
+      "must_contain_ok": true,
+      "node_error": null,
+      "pass": true
+    },
+    {
+      "id": "kb_auto_106",
+      "question": "Quale valore massimo di resistenza definisce il collegamento elettrico tra due componenti metallici nella verifica di equipotenzialit\u00e0 con tensione di 12 V in corrente continua?",
+      "session_pdf_path": "",
+      "session_pdf_source": "",
+      "predicted_intent": "GLOBAL_KB",
+      "expected_intent": "GLOBAL_KB",
+      "intent_ok": true,
+      "observed_sources": [
+        "kb"
+      ],
+      "expected_sources": [
+        "kb"
+      ],
+      "sources_ok": true,
+      "citations_count": 5,
+      "reranker_docs_count": 5,
+      "citations_ok": true,
+      "expected_citations": [
+        {
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
           "page": "10"
         }
       ],
       "observed_citations": [
         {
-          "source": "PRG_1_07_LineeGuidaCIG_2020.pdf",
+          "source": "PRG_1_UNI_11655_Ottobre2024.pdf",
+          "page": "16",
+          "retrieval_type": "semantic"
+        },
+        {
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
           "page": "10",
           "retrieval_type": "semantic+bm25"
         },
         {
-          "source": "PRG_1_010_LG_10_2022.pdf",
-          "page": "16",
+          "source": "PRG_1_UNI_EN_ISO_15589-1_Dicembre2017.pdf",
+          "page": "83",
           "retrieval_type": "semantic+bm25"
         },
         {
-          "source": "PRG_1_07_LineeGuidaCIG_2020.pdf",
-          "page": "14",
+          "source": "PRG_1_UNI10619_1_2023.pdf",
+          "page": "17",
+          "retrieval_type": "semantic"
+        },
+        {
+          "source": "PRG_1_UNI_EN_12954_Ottobre2019_TestoInglese.pdf",
+          "page": "10",
+          "retrieval_type": "semantic"
+        }
+      ],
+      "missing_expected_citations": [],
+      "citations_recall": 1.0,
+      "must_contain_ok": true,
+      "node_error": null,
+      "pass": true
+    },
+    {
+      "id": "kb_auto_107",
+      "question": "Quali requisiti devono essere soddisfatti per applicare la manutenzione preventiva a frequenza variabile?",
+      "session_pdf_path": "",
+      "session_pdf_source": "",
+      "predicted_intent": "GLOBAL_KB",
+      "expected_intent": "GLOBAL_KB",
+      "intent_ok": true,
+      "observed_sources": [
+        "kb"
+      ],
+      "expected_sources": [
+        "kb"
+      ],
+      "sources_ok": true,
+      "citations_count": 4,
+      "reranker_docs_count": 4,
+      "citations_ok": true,
+      "expected_citations": [
+        {
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
+          "page": "12"
+        }
+      ],
+      "observed_citations": [
+        {
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
+          "page": "12",
           "retrieval_type": "semantic+bm25"
         },
         {
-          "source": "PRG_1_07_LineeGuidaCIG_2020.pdf",
-          "page": "9",
+          "source": "PRG_1_UNI 9463-2_2022.pdf",
+          "page": "29",
+          "retrieval_type": "semantic+bm25"
+        },
+        {
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
+          "page": "11",
+          "retrieval_type": "semantic+bm25"
+        },
+        {
+          "source": "PRG_1_D.Lgs_31_marzo_2023_n.36.pdf",
+          "page": "462",
+          "retrieval_type": "semantic"
+        }
+      ],
+      "missing_expected_citations": [],
+      "citations_recall": 1.0,
+      "must_contain_ok": true,
+      "node_error": null,
+      "pass": true
+    },
+    {
+      "id": "kb_auto_108",
+      "question": "In che forma deve essere organizzato il rapporto di verifica di primo impianto e quali informazioni minime deve includere?",
+      "session_pdf_path": "",
+      "session_pdf_source": "",
+      "predicted_intent": "GLOBAL_KB",
+      "expected_intent": "GLOBAL_KB",
+      "intent_ok": true,
+      "observed_sources": [
+        "kb"
+      ],
+      "expected_sources": [
+        "kb"
+      ],
+      "sources_ok": true,
+      "citations_count": 4,
+      "reranker_docs_count": 4,
+      "citations_ok": true,
+      "expected_citations": [
+        {
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
+          "page": "13"
+        }
+      ],
+      "observed_citations": [
+        {
+          "source": "PRG_1_UNI_9571-2_2022.pdf",
+          "page": "12",
+          "retrieval_type": "semantic+bm25"
+        },
+        {
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
+          "page": "13",
+          "retrieval_type": "semantic+bm25"
+        },
+        {
+          "source": "PRG_1_UNI 9463-2_2022.pdf",
+          "page": "26",
+          "retrieval_type": "semantic+bm25"
+        },
+        {
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
+          "page": "3",
+          "retrieval_type": "semantic"
+        }
+      ],
+      "missing_expected_citations": [],
+      "citations_recall": 1.0,
+      "must_contain_ok": true,
+      "node_error": null,
+      "pass": true
+    },
+    {
+      "id": "kb_auto_109",
+      "question": "Qual \u00e8 la frequenza minima prevista per la lubrificazione delle valvole di intercettazione nella manutenzione preventiva (categoria 2)?",
+      "session_pdf_path": "",
+      "session_pdf_source": "",
+      "predicted_intent": "GLOBAL_KB",
+      "expected_intent": "GLOBAL_KB",
+      "intent_ok": true,
+      "observed_sources": [
+        "kb"
+      ],
+      "expected_sources": [
+        "kb"
+      ],
+      "sources_ok": true,
+      "citations_count": 4,
+      "reranker_docs_count": 4,
+      "citations_ok": true,
+      "expected_citations": [
+        {
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
+          "page": "20"
+        }
+      ],
+      "observed_citations": [
+        {
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
+          "page": "20",
+          "retrieval_type": "semantic+bm25"
+        },
+        {
+          "source": "PRG_1_UNI_9571-2_2022.pdf",
+          "page": "15",
+          "retrieval_type": "semantic"
+        },
+        {
+          "source": "PRG_1_UNI 9463-2_2022.pdf",
+          "page": "43",
+          "retrieval_type": "semantic+bm25"
+        },
+        {
+          "source": "PRG_1_UNI 9463-2_2022.pdf",
+          "page": "29",
           "retrieval_type": "semantic+bm25"
         }
       ],
       "missing_expected_citations": [],
+      "citations_recall": 1.0,
+      "must_contain_ok": true,
+      "node_error": null,
+      "pass": true
+    },
+    {
+      "id": "kb_auto_110",
+      "question": "Qual \u00e8 la cadenza massima prevista per la verifica di integrit\u00e0 periodica dei recipienti a pressione a partire dalla data del verbale di messa in servizio?",
+      "session_pdf_path": "",
+      "session_pdf_source": "",
+      "predicted_intent": "GLOBAL_KB",
+      "expected_intent": "GLOBAL_KB",
+      "intent_ok": true,
+      "observed_sources": [
+        "kb"
+      ],
+      "expected_sources": [
+        "kb"
+      ],
+      "sources_ok": true,
+      "citations_count": 8,
+      "reranker_docs_count": 8,
+      "citations_ok": true,
+      "expected_citations": [
+        {
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
+          "page": "23"
+        }
+      ],
+      "observed_citations": [
+        {
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
+          "page": "23",
+          "retrieval_type": "semantic+bm25"
+        },
+        {
+          "source": "PRG_1_UNI 9463-2_2022.pdf",
+          "page": "32",
+          "retrieval_type": "semantic+bm25"
+        },
+        {
+          "source": "PRG_1_UNI 9463-4_2022.pdf",
+          "page": "11",
+          "retrieval_type": "semantic+bm25"
+        },
+        {
+          "source": "PRG_1_Decreto Ministeriale del 1 dicembre 2004 n. 329.pdf",
+          "page": "7",
+          "retrieval_type": "semantic"
+        },
+        {
+          "source": "PRG_1_UNI_9571-1_2012.pdf",
+          "page": "22",
+          "retrieval_type": "semantic+bm25"
+        },
+        {
+          "source": "PRG_1_dm_17_aprile_2008.pdf",
+          "page": "32",
+          "retrieval_type": "semantic"
+        },
+        {
+          "source": "PRG_1_UNI 9463-2_2022.pdf",
+          "page": "31",
+          "retrieval_type": "semantic+bm25"
+        },
+        {
+          "source": "PRG_1_Decreto Ministeriale del 1 dicembre 2004 n. 329.pdf",
+          "page": "8",
+          "retrieval_type": "semantic"
+        }
+      ],
+      "missing_expected_citations": [],
+      "citations_recall": 1.0,
       "must_contain_ok": true,
       "node_error": null,
       "pass": true

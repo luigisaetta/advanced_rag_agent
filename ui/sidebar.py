@@ -75,6 +75,11 @@ def render_sidebar(reset_callback):
         config.ENABLE_TRACING = st.checkbox(
             "Enable tracing", value=False, disabled=False
         )
+        st.session_state.enable_post_answer_evaluation = st.checkbox(
+            "Enable Post Answer Evaluation",
+            value=st.session_state.enable_post_answer_evaluation,
+            disabled=False,
+        )
 
     st.session_state.enable_advanced_analysis = st.sidebar.checkbox(
         "Advanced Analysis", value=False, disabled=False

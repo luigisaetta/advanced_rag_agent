@@ -24,6 +24,7 @@ from py_zipkin import Encoding
 from py_zipkin.zipkin import zipkin_span
 
 import config
+from agent.post_answer_evaluator import PostAnswerEvaluator
 from agent.rag_agent import State
 from core.transport import http_transport
 from core.utils import redact_agent_config_for_log
@@ -36,6 +37,9 @@ def _build_agent_config(progress_callback):
     return {
         "configurable": {
             "model_id": st.session_state.model_id,
+            "embed_model_id": config.EMBED_MODEL_ID,
+            "reranker_model_id": config.RERANKER_MODEL_ID,
+            "top_k": config.TOP_K,
             "enable_reranker": st.session_state.enable_reranker,
             "enable_advanced_analysis": st.session_state.enable_advanced_analysis,
             # Default is false. SESSION_DOC sets this at runtime via classifier output.
@@ -55,9 +59,63 @@ def _build_agent_config(progress_callback):
             # Runtime toggle from UI (default sourced from config).
             "advanced_analysis_enable_risk_validation": st.session_state.enable_risk_validation,
             "advanced_analysis_risk_validation_kb_top_k": config.ADVANCED_ANALYSIS_RISK_VALIDATION_KB_TOP_K,
+            "post_answer_evaluation_enabled": st.session_state.enable_post_answer_evaluation,
+            "post_answer_evaluation_model_id": config.POST_ANSWER_EVALUATION_MODEL_ID,
+            "post_answer_evaluation_max_chars": config.POST_ANSWER_EVALUATION_MAX_CHARS,
             "progress_callback": progress_callback,
         }
     }
+
+
+def _has_hybrid_db_signal(docs: list) -> bool:
+    """Return True when retrieval provenance indicates hybrid DB retrieval."""
+    retrieval_types = {
+        str(((doc.get("metadata") or {}).get("retrieval_type", "") or "")).lower()
+        for doc in (docs or [])
+    }
+    return bool({"bm25", "semantic+bm25"} & retrieval_types)
+
+
+def _run_post_answer_evaluation_if_needed(
+    by_step: dict, question: str, final_answer: str, agent_config: dict, logger
+) -> None:
+    """
+    Run post-answer evaluator after UI rendering (log-only), preserving streaming UX.
+    """
+    if not agent_config["configurable"].get("post_answer_evaluation_enabled", True):
+        return
+
+    intent_payload = by_step.get("IntentClassifier", {}) or {}
+    has_session_pdf = bool(intent_payload.get("has_session_pdf", False))
+    if has_session_pdf:
+        return
+
+    retriever_docs = []
+    for key in ("HybridFlow", "HybridSearch", "Search"):
+        payload = by_step.get(key, {}) or {}
+        docs = payload.get("retriever_docs", [])
+        if docs:
+            retriever_docs = docs
+            break
+    if not retriever_docs or not _has_hybrid_db_signal(retriever_docs):
+        return
+
+    rerank_payload = by_step.get("Rerank", {}) or {}
+    eval_input = State(
+        user_request=question,
+        chat_history=[],
+        standalone_question=(by_step.get("QueryRewrite", {}) or {}).get(
+            "standalone_question", question
+        ),
+        retriever_docs=retriever_docs,
+        reranker_docs=rerank_payload.get("reranker_docs", []),
+        final_answer=final_answer,
+        error=None,
+    )
+    try:
+        PostAnswerEvaluator().invoke(eval_input, config=agent_config)
+    except Exception as exc:
+        logger.warning("Post-answer evaluation (UI-side) failed: %s", exc)
 
 
 def handle_question(question: str, logger) -> None:
@@ -73,6 +131,7 @@ def handle_question(question: str, logger) -> None:
         )
 
         results = []
+        by_step = {}
         error = None
         full_response = ""
 
@@ -110,6 +169,7 @@ def handle_question(question: str, logger) -> None:
                     logger.info(msg)
                     st.toast(msg)
                     results.append(value)
+                    by_step[key] = value
                     error = value["error"]
 
                     if key == "QueryRewrite":
@@ -132,8 +192,21 @@ def handle_question(question: str, logger) -> None:
                         render_advanced_plan(value.get("advanced_plan", []))
 
         if error is None:
-            answer_payload = results[-1]["final_answer"]
+            answer_payload = None
+            for payload in reversed(results):
+                if "final_answer" in payload:
+                    answer_payload = payload["final_answer"]
+                    break
+            if answer_payload is None:
+                raise KeyError("final_answer")
             full_response = render_answer(answer_payload)
+            _run_post_answer_evaluation_if_needed(
+                by_step=by_step,
+                question=question,
+                final_answer=full_response,
+                agent_config=agent_config,
+                logger=logger,
+            )
             elapsed_time = round((time.time() - time_start), 1)
             logger.info("Elapsed time: %s sec.", elapsed_time)
             logger.info("")

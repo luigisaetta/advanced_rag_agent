@@ -63,6 +63,10 @@ class State(TypedDict):
     reranker_docs: Optional[list] = []
     # Answer
     final_answer: str
+    # Post-answer evaluation (log-only root-cause analysis)
+    post_answer_root_cause: str = ""
+    post_answer_reason: str = ""
+    post_answer_confidence: float = 0.0
     # Citations
     citations: list = []
 

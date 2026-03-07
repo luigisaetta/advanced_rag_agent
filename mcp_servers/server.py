@@ -13,14 +13,15 @@ from pathlib import Path
 from typing import Any
 
 from fastmcp import FastMCP
-from config import COLLECTION_LIST, TOP_K, ENABLE_HYBRID_SEARCH
-from core.bm25_cache import get_bm25_cache
-from core.utils import get_console_logger
 
 # Ensure project root is importable even when running from `mcp_servers/` directory.
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+
+from config import COLLECTION_LIST, TOP_K, ENABLE_HYBRID_SEARCH  # pylint: disable=wrong-import-position
+from core.bm25_cache import get_bm25_cache  # pylint: disable=wrong-import-position
+from core.utils import get_console_logger  # pylint: disable=wrong-import-position
 
 logger = get_console_logger("bm25_mcp_server")
 
