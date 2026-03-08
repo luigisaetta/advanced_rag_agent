@@ -72,6 +72,24 @@ def _to_table_df(records: list[dict]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def _root_cause_stats(records: list[dict]) -> dict[str, int]:
+    """
+    Compute counts for key root-cause categories on filtered records.
+    """
+    counts = {"NO_ISSUE": 0, "RERANKER": 0, "RETRIEVAL": 0, "GENERATION": 0}
+    for item in records:
+        value = str(item.get("root_cause") or "").strip().upper()
+        if value == "NO_ISSUE":
+            counts["NO_ISSUE"] += 1
+        elif value in {"RERANK", "RERANKER"}:
+            counts["RERANKER"] += 1
+        elif value in {"RETRIEVAL", "RETRIEVASL"}:
+            counts["RETRIEVAL"] += 1
+        elif value == "GENERATION":
+            counts["GENERATION"] += 1
+    return counts
+
+
 st.set_page_config(page_title="Post Answer Evaluation", layout="wide")
 st.title("Post Answer Evaluation")
 st.caption("Browse evaluator outcomes with filters and detailed view per record.")
@@ -128,6 +146,15 @@ if not records:
 
 df = _to_table_df(records)
 st.dataframe(df, use_container_width=True, height=480, hide_index=True)
+
+stats = _root_cause_stats(records)
+st.markdown("**Statistics (current filters)**")
+stat_cols = st.columns(5)
+stat_cols[0].metric("Total cases", len(records))
+stat_cols[1].metric("NO_ISSUE", stats["NO_ISSUE"])
+stat_cols[2].metric("RERANKER", stats["RERANKER"])
+stat_cols[3].metric("RETRIEVAL", stats["RETRIEVAL"])
+stat_cols[4].metric("GENERATION", stats["GENERATION"])
 
 csv_bytes = df.to_csv(index=False).encode("utf-8")
 st.download_button(
