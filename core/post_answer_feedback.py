@@ -161,12 +161,15 @@ class PostAnswerFeedback:
         root_cause: str | None = None,
         date_from: date | None = None,
         date_to: date | None = None,
+        llm_model_id: str | None = None,
     ) -> list[dict]:
         """
         Return post-answer evaluation rows ordered by newest first.
         Optional filters:
         - root_cause exact match
         - date_from/date_to inclusive range (date portion of CREATED_AT)
+        - llm_model_id exact match from CONFIG_JSON.llm_model_id
+          (fallback to CONFIG_JSON.model_id for backward compatibility)
         """
         if not self.table_exists(self.TABLE_NAME):
             return []
@@ -189,6 +192,17 @@ class PostAnswerFeedback:
             next_day = date_to + timedelta(days=1)
             where_clauses.append("CREATED_AT < :date_to_next")
             binds["date_to_next"] = datetime.combine(next_day, datetime.min.time())
+
+        if llm_model_id:
+            where_clauses.append(
+                """
+                COALESCE(
+                    JSON_VALUE(CONFIG_JSON, '$.llm_model_id' RETURNING VARCHAR2(200) NULL ON ERROR),
+                    JSON_VALUE(CONFIG_JSON, '$.model_id' RETURNING VARCHAR2(200) NULL ON ERROR)
+                ) = :llm_model_id
+                """
+            )
+            binds["llm_model_id"] = str(llm_model_id).strip()
 
         where_sql = ""
         if where_clauses:
@@ -231,6 +245,11 @@ class PostAnswerFeedback:
                             "reason": self._read_lob_if_needed(row[4]),
                             "confidence": (
                                 None if row[5] is None else float(row[5])
+                            ),
+                            "llm_model_id": (
+                                (cfg_obj.get("llm_model_id") or cfg_obj.get("model_id"))
+                                if isinstance(cfg_obj, dict)
+                                else ""
                             ),
                             "config_json": cfg_obj,
                         }

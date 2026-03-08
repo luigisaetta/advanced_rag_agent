@@ -101,6 +101,9 @@ Respond in a friendly and polite tone at all times.
 - Do not invent facts that are not supported by the context.
 - Always answer in the same language as the user's request.
 - Always return your response in properly formatted markdown.
+- Do NOT use LaTeX notation in the final text.
+- Write formulas using plain markdown/text notation only.
+- For subscripts/superscripts, prefer readable text forms like `Q_min`, `x^2`, `(a/b)`.
 
 Context: {context}
 
@@ -344,6 +347,8 @@ Constraints:
 - keep the output concise (maximum {max_words} words).
 - include practical conclusions for this step.
 - if evidence is insufficient, say what is missing.
+- do NOT use LaTeX notation.
+- write formulas using plain markdown/text notation only (for example: `Q_min`, `x^2`, `(a/b)`).
 
 User request:
 {user_request}
@@ -383,6 +388,8 @@ Constraints:
 - use the same language as the user request.
 - do not invent facts outside step outputs.
 - do not add headings/titles; return only synthesis body text.
+- do NOT use LaTeX notation.
+- write formulas using plain markdown/text notation only (for example: `Q_min`, `x^2`, `(a/b)`).
 
 User request:
 {user_request}

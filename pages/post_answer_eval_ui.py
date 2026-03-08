@@ -13,12 +13,14 @@ import json
 import pandas as pd
 import streamlit as st
 
+from config import MODEL_LIST
 from core.post_answer_feedback import PostAnswerFeedback
 from core.utils import get_console_logger
 
 logger = get_console_logger()
 
 ROOT_CAUSE_OPTIONS = ["ALL", "NO_ISSUE", "RETRIEVAL", "RERANK", "GENERATION"]
+LLM_MODEL_OPTIONS = ["ALL"] + list(dict.fromkeys(MODEL_LIST))
 
 
 def _truncate(text: str, max_len: int = 160) -> str:
@@ -62,6 +64,7 @@ def _to_table_df(records: list[dict]) -> pd.DataFrame:
                 ),
                 "root_cause": item.get("root_cause", ""),
                 "confidence": item.get("confidence"),
+                "llm_model_id": item.get("llm_model_id", ""),
                 "question_preview": _truncate(item.get("question", ""), max_len=140),
                 "reason_preview": _truncate(item.get("reason", ""), max_len=180),
             }
@@ -73,7 +76,7 @@ st.set_page_config(page_title="Post Answer Evaluation", layout="wide")
 st.title("Post Answer Evaluation")
 st.caption("Browse evaluator outcomes with filters and detailed view per record.")
 
-col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
+col1, col2, col3, col4, col5 = st.columns([1, 1, 1, 1, 2])
 with col1:
     max_rows = st.number_input("Max rows", min_value=10, max_value=2000, value=200, step=10)
 with col2:
@@ -84,6 +87,8 @@ with col3:
 with col4:
     use_date_to = st.checkbox("Use to date", value=False)
     date_to = st.date_input("To date", value=date.today(), disabled=not use_date_to)
+with col5:
+    llm_model_id_filter = st.selectbox("LLM model id", LLM_MODEL_OPTIONS, index=0)
 
 filters_col1, filters_col2 = st.columns([1, 5])
 with filters_col1:
@@ -98,15 +103,17 @@ if refresh or "post_answer_eval_records" not in st.session_state:
             "root_cause": None if root_cause_filter == "ALL" else root_cause_filter,
             "date_from": _safe_date(date_from) if use_date_from else None,
             "date_to": _safe_date(date_to) if use_date_to else None,
+            "llm_model_id": None if llm_model_id_filter == "ALL" else llm_model_id_filter,
         }
         records = PostAnswerFeedback().list_feedback(**filters)
         st.session_state.post_answer_eval_records = records
         logger.info(
-            "Loaded post-answer evaluation rows: count=%d root_cause=%s date_from=%s date_to=%s",
+            "Loaded post-answer evaluation rows: count=%d root_cause=%s date_from=%s date_to=%s llm_model_id=%s",
             len(records),
             filters["root_cause"],
             filters["date_from"],
             filters["date_to"],
+            filters["llm_model_id"],
         )
     except Exception as exc:
         logger.error("Failed to load post-answer evaluation rows: %s", exc)
@@ -144,7 +151,11 @@ if selected:
     with det_col2:
         st.markdown(f"**ID:** {selected.get('id')}")
         cfg = selected.get("config_json", {})
-        model_id = cfg.get("model_id", "") if isinstance(cfg, dict) else ""
+        model_id = (
+            (cfg.get("llm_model_id") or cfg.get("model_id", ""))
+            if isinstance(cfg, dict)
+            else ""
+        )
         st.markdown(f"**Model:** {model_id}")
 
     with st.expander("Question", expanded=False):
