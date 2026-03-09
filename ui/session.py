@@ -22,6 +22,7 @@ import streamlit as st
 
 import config
 from agent.rag_agent import create_workflow
+from prompt_profiles import PROMPT_PROFILES, DEFAULT_PROMPT_PROFILE
 
 
 def init_session_state() -> None:
@@ -53,10 +54,13 @@ def init_session_state() -> None:
     if "collection_name" not in st.session_state:
         st.session_state.collection_name = config.COLLECTION_LIST[0]
     if "prompt_profile" not in st.session_state:
+        configured_profile = str(
+            getattr(config, "PROMPT_PROFILE", DEFAULT_PROMPT_PROFILE)
+        ).strip()
         st.session_state.prompt_profile = (
-            config.PROMPT_PROFILE
-            if config.PROMPT_PROFILE in config.PROMPT_PROFILES
-            else "general"
+            configured_profile
+            if configured_profile in PROMPT_PROFILES
+            else DEFAULT_PROMPT_PROFILE
         )
     if "get_feedback" not in st.session_state:
         st.session_state.get_feedback = False

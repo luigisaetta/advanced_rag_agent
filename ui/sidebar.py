@@ -23,6 +23,7 @@ import streamlit as st
 from langchain_core.vectorstores import InMemoryVectorStore
 
 import config
+from prompt_profiles import PROMPT_PROFILES
 from core.oci_models import get_embedding_model
 from core.utils import docs_serializable
 from core.session_pdf_vlm import scan_pdf_to_docs_with_vlm
@@ -53,7 +54,7 @@ def render_sidebar(reset_callback):
             "Collection name",
             config.COLLECTION_LIST,
         )
-        profile_keys = list(config.PROMPT_PROFILES.keys())
+        profile_keys = list(PROMPT_PROFILES.keys())
         st.session_state.prompt_profile = st.selectbox(
             "Prompt profile",
             profile_keys,
@@ -62,7 +63,7 @@ def render_sidebar(reset_callback):
                 if st.session_state.prompt_profile in profile_keys
                 else 0
             ),
-            format_func=lambda key: (f"{config.PROMPT_PROFILES[key]['name']} ({key})"),
+            format_func=lambda key: (f"{PROMPT_PROFILES[key]['name']} ({key})"),
             help=(
                 "Select the domain framing used across prompts "
                 "(classification, retrieval guidance, answer generation)."

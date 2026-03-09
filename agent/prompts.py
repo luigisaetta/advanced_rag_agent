@@ -24,7 +24,8 @@ Warnings:
     This module is in development, may change in future versions.
 """
 
-from config import PROMPT_PROFILE, PROMPT_PROFILES
+from config import PROMPT_PROFILE
+from prompt_profiles import PROMPT_PROFILES
 
 _PROFILE_PLACEHOLDER = "<<DOMAIN_PROFILE>>"
 

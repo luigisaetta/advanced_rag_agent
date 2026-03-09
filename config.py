@@ -138,7 +138,7 @@ POST_ANSWER_EVALUATION_MODEL_ID = "openai.gpt-5.4"
 POST_ANSWER_EVALUATION_MAX_CHARS = 12000
 
 # BM25 cache warms up from all the collections in this list
-COLLECTION_LIST = ["COLL01", "CONTRATTI", "BOOKS"]
+COLLECTION_LIST = ["COLL01", "CONTRATTI", "BOOKS", "ARERA"]
 DEFAULT_COLLECTION = "COLL01"
 # optional persistence path for serialized BM25 cache file
 # default points to a repository-local folder (can be overridden via env var)
