@@ -96,12 +96,16 @@ st.caption("Browse evaluator outcomes with filters and detailed view per record.
 
 col1, col2, col3, col4, col5 = st.columns([1, 1, 1, 1, 2])
 with col1:
-    max_rows = st.number_input("Max rows", min_value=10, max_value=2000, value=200, step=10)
+    max_rows = st.number_input(
+        "Max rows", min_value=10, max_value=2000, value=200, step=10
+    )
 with col2:
     root_cause_filter = st.selectbox("Root cause", ROOT_CAUSE_OPTIONS, index=0)
 with col3:
     use_date_from = st.checkbox("Use from date", value=False)
-    date_from = st.date_input("From date", value=date.today(), disabled=not use_date_from)
+    date_from = st.date_input(
+        "From date", value=date.today(), disabled=not use_date_from
+    )
 with col4:
     use_date_to = st.checkbox("Use to date", value=False)
     date_to = st.date_input("To date", value=date.today(), disabled=not use_date_to)
@@ -121,7 +125,9 @@ if refresh or "post_answer_eval_records" not in st.session_state:
             "root_cause": None if root_cause_filter == "ALL" else root_cause_filter,
             "date_from": _safe_date(date_from) if use_date_from else None,
             "date_to": _safe_date(date_to) if use_date_to else None,
-            "llm_model_id": None if llm_model_id_filter == "ALL" else llm_model_id_filter,
+            "llm_model_id": (
+                None if llm_model_id_filter == "ALL" else llm_model_id_filter
+            ),
         }
         records = PostAnswerFeedback().list_feedback(**filters)
         st.session_state.post_answer_eval_records = records

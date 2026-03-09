@@ -186,7 +186,9 @@ def _question_is_valid(question: str, file_stem: str) -> bool:
         return False
 
     q_low = q.lower()
-    file_tokens = [t for t in re.split(r"[^a-zA-Z0-9]+", file_stem.lower()) if len(t) > 2]
+    file_tokens = [
+        t for t in re.split(r"[^a-zA-Z0-9]+", file_stem.lower()) if len(t) > 2
+    ]
     if any(tok in q_low for tok in file_tokens):
         return False
     if any(tok in q_low for tok in FORBIDDEN_TOKENS):
@@ -428,7 +430,9 @@ def main() -> None:
         id_prefix=str(args.id_prefix).strip(),
         start_id=int(args.start_id),
     )
-    logger.info("Converted generated QA pairs to JSONL schema: %d rows", len(dataset_rows))
+    logger.info(
+        "Converted generated QA pairs to JSONL schema: %d rows", len(dataset_rows)
+    )
     _write_jsonl(dataset_rows, out_path=out_path)
 
     logger.info("Regression dataset generation completed successfully.")

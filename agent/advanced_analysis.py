@@ -273,7 +273,7 @@ def _get_report_labels(lang: str) -> dict:
             "step_title": "Passo",
             "final_synthesis_title": "Sintesi Finale",
             "risk_validation_title": "Validazione Rischi",
-            "no_plan": "L'analisi avanzata non puo essere eseguita perche non e stato generato alcun piano.",
+            "no_plan": "L'analisi avanzata non puo essere eseguita perche non è stato generato alcun piano.",
             "no_steps": "L'analisi avanzata non ha prodotto risultati intermedi da sintetizzare.",
             "risk_validation_skipped_session_only": "Validazione KB saltata: session-only mode attiva.",
             "risk_validation_no_critical": "Nessun aspetto negativo critico identificato.",

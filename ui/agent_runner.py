@@ -16,7 +16,9 @@ License:
     This code is released under the MIT License.
 """
 
+import copy
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 import streamlit as st
 from langchain_core.messages import AIMessage, HumanMessage
@@ -30,6 +32,10 @@ from core.transport import http_transport
 from core.utils import redact_agent_config_for_log
 from ui.rendering import render_advanced_plan, render_answer, render_references
 from ui.session import add_to_chat_history, get_chat_history
+
+_POST_EVAL_EXECUTOR = ThreadPoolExecutor(
+    max_workers=2, thread_name_prefix="post-answer-eval"
+)
 
 
 def _build_agent_config(progress_callback):
@@ -107,15 +113,24 @@ def _run_post_answer_evaluation_if_needed(
         standalone_question=(by_step.get("QueryRewrite", {}) or {}).get(
             "standalone_question", question
         ),
-        retriever_docs=retriever_docs,
-        reranker_docs=rerank_payload.get("reranker_docs", []),
+        retriever_docs=copy.deepcopy(retriever_docs),
+        reranker_docs=copy.deepcopy(rerank_payload.get("reranker_docs", [])),
         final_answer=final_answer,
         error=None,
     )
+    eval_config = copy.deepcopy(agent_config)
+
+    def _background_eval():
+        """Run post-answer evaluator in a background worker."""
+        try:
+            PostAnswerEvaluator().invoke(eval_input, config=eval_config)
+        except Exception as exc:
+            logger.warning("Post-answer evaluation async failed: %s", exc)
+
     try:
-        PostAnswerEvaluator().invoke(eval_input, config=agent_config)
-    except Exception as exc:
-        logger.warning("Post-answer evaluation (UI-side) failed: %s", exc)
+        _POST_EVAL_EXECUTOR.submit(_background_eval)
+    except RuntimeError as exc:
+        logger.warning("Post-answer evaluation async submit failed: %s", exc)
 
 
 def handle_question(question: str, logger) -> None:

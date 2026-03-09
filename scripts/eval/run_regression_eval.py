@@ -399,7 +399,9 @@ def _score(results: List[Dict[str, Any]]) -> Dict[str, Any]:
     }
 
 
-def _print_run_configuration(args, dataset_path: Path, out_path: Path, rows_count: int) -> None:
+def _print_run_configuration(
+    args, dataset_path: Path, out_path: Path, rows_count: int
+) -> None:
     """Print the effective run configuration at startup."""
     print("=" * 72)
     print("RAG REGRESSION EVALUATION RUN")

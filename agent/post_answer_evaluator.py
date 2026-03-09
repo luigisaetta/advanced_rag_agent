@@ -76,7 +76,9 @@ class PostAnswerEvaluator(Runnable):
             metadata = (doc or {}).get("metadata", {}) or {}
             source = str(metadata.get("source", "unknown") or "unknown")
             page = str(metadata.get("page_label", "") or "")
-            retrieval_type = str(metadata.get("retrieval_type", "semantic") or "semantic")
+            retrieval_type = str(
+                metadata.get("retrieval_type", "semantic") or "semantic"
+            )
             key = (source, page, retrieval_type)
             if key in seen:
                 continue

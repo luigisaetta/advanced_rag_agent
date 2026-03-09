@@ -243,9 +243,7 @@ class PostAnswerFeedback:
                             "question": self._read_lob_if_needed(row[2]),
                             "root_cause": str(row[3] or ""),
                             "reason": self._read_lob_if_needed(row[4]),
-                            "confidence": (
-                                None if row[5] is None else float(row[5])
-                            ),
+                            "confidence": (None if row[5] is None else float(row[5])),
                             "llm_model_id": (
                                 (cfg_obj.get("llm_model_id") or cfg_obj.get("model_id"))
                                 if isinstance(cfg_obj, dict)

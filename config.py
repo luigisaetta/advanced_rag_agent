@@ -26,7 +26,7 @@ Warnings:
 
 import os
 
-from prompt_profiles import PROMPT_PROFILES, DEFAULT_PROMPT_PROFILE
+from prompt_profiles import DEFAULT_PROMPT_PROFILE
 
 DEBUG = False
 
