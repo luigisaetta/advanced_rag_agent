@@ -6,6 +6,11 @@ This guide explains how to run this project on Ubuntu with Docker Compose, inclu
 3. BM25 MCP server
 4. Nginx reverse proxy with Basic Auth
 
+Current deployment behavior:
+1. Nginx Basic Auth username is forwarded to Streamlit as `X-Forwarded-User`.
+2. The app resolves user profile from Oracle table `USER_PROFILE` (`ADMIN` or `USER`).
+3. Streamlit pages `loader_ui` and `post_answer_eval_ui` are visible only to `ADMIN`.
+
 ## 1) Prerequisites
 
 Install Docker and Compose plugin:
@@ -125,6 +130,33 @@ From project root:
 docker compose -f deployment/docker/docker-compose.yml up -d --build
 ```
 
+## 8) Bootstrap user profiles in Oracle
+
+Before validating role-based access in UI, create/seed `USER_PROFILE`:
+
+```bash
+# example with SQL*Plus (replace credentials/DSN)
+sqlplus <DB_USER>/<DB_PASSWORD>@<DB_DSN> @deployment/sql/001_user_profile.sql
+```
+
+The script:
+1. Creates table `USER_PROFILE` if missing.
+2. Seeds user `luigi` as `ADMIN`.
+
+If your Basic Auth username is different, add/update it in table:
+
+```sql
+MERGE INTO USER_PROFILE t
+USING (SELECT 'your_username' username, 'USER' profile_code, 1 enabled FROM dual) s
+ON (UPPER(t.username) = UPPER(s.username))
+WHEN MATCHED THEN
+  UPDATE SET t.profile_code=s.profile_code, t.enabled=s.enabled, t.updated_at=SYSTIMESTAMP
+WHEN NOT MATCHED THEN
+  INSERT (username, profile_code, enabled, updated_at)
+  VALUES (s.username, s.profile_code, s.enabled, SYSTIMESTAMP);
+COMMIT;
+```
+
 Check status:
 
 ```bash
@@ -147,7 +179,7 @@ docker compose -f deployment/docker/docker-compose.yml logs -f bm25_mcp_server
 
 Expected log lines include `BM25 MCP startup` and prewarm status.
 
-## 8) Network and firewall
+## 9) Network and firewall
 
 By default:
 1. UI is exposed through Nginx on `8501/tcp`
@@ -166,15 +198,17 @@ sudo service netfilter-persistent save
 If you want citation server private, remove its `ports:` mapping from compose and keep only internal access.
 If you want MCP server private, remove its `ports:` mapping from compose and keep only internal access.
 
-## 9) Validation checklist
+## 10) Validation checklist
 
 1. Open `http://<UBUNTU_HOST_IP>:8501`
 2. Nginx prompts for username/password
 3. After login, Streamlit UI loads
-4. Citation image links open correctly
-5. `docker compose ... ps` shows all services as `Up`
+4. In app logs you see: `Authenticated user=<username> profile=<ADMIN|USER> thread_id=<...>`
+5. `loader_ui` and `post_answer_eval_ui` are visible only for `ADMIN`
+6. Citation image links open correctly
+7. `docker compose ... ps` shows all services as `Up`
 
-## 10) Common issues
+## 11) Common issues
 
 1. `.htpasswd is a directory`
    - fix:
@@ -191,8 +225,11 @@ If you want MCP server private, remove its `ports:` mapping from compose and kee
    ```bash
    docker compose -f deployment/docker/docker-compose.yml logs -f nginx_streamlit custom-rag-agent-ui
    ```
+5. User authenticated but role-based pages not visible as expected
+   - verify `USER_PROFILE` content for the same Basic Auth username
+   - verify `X-Forwarded-User` forwarding is present in `deployment/docker/nginx/streamlit.conf`
 
-## 11) Stop and cleanup
+## 12) Stop and cleanup
 
 Stop stack:
 

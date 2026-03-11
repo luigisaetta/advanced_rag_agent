@@ -10,6 +10,11 @@ This setup runs:
 3. BM25 MCP server (`fastmcp`) with startup prewarm cache
 4. Nginx reverse proxy in front of Streamlit
 
+Auth/profile behavior:
+1. Nginx Basic Auth username is forwarded to the app as `X-Forwarded-User`.
+2. App resolves profile from Oracle `USER_PROFILE` (`ADMIN`/`USER`).
+3. Streamlit pages `loader_ui` and `post_answer_eval_ui` are admin-only.
+
 ## Deployment settings
 
 `deployment/docker/docker-compose.yml` configures:
@@ -129,6 +134,16 @@ docker compose -f deployment/docker/docker-compose.yml up -d
 docker compose -f deployment/docker/docker-compose.yml restart nginx_streamlit
 ```
 
+## User profile bootstrap (Oracle)
+
+Run:
+
+```bash
+sqlplus <DB_USER>/<DB_PASSWORD>@<DB_DSN> @deployment/sql/001_user_profile.sql
+```
+
+The script creates table `USER_PROFILE` (if missing) and seeds user `luigi` as `ADMIN`.
+
 Important checks:
 
 1. `config_private.py` exists in project root.
@@ -139,6 +154,8 @@ Important checks:
 6. `deployment/docker/nginx/.htpasswd` exists before starting Nginx.
 7. BM25 MCP container startup logs show successful prewarm (or explicit prewarm errors).
 8. `bm25_cache/ui` and `bm25_cache/mcp` directories exist in project root.
+9. `deployment/sql/001_user_profile.sql` has been executed on the target schema.
+10. UI logs include `Authenticated user=<username> profile=<ADMIN|USER>`.
 
 ## Build
 

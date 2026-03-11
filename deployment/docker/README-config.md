@@ -24,6 +24,11 @@ Deployment components in `deployment/docker`:
 3. `bm25_mcp_server` (FastMCP server for BM25 cache/search)
 4. `nginx_streamlit` (reverse proxy + Basic Auth)
 
+Authentication/Profile notes:
+1. Nginx Basic Auth username is forwarded to Streamlit via `X-Forwarded-User`.
+2. App profile resolution uses Oracle table `USER_PROFILE` (`ADMIN` / `USER`).
+3. Admin-only pages are `loader_ui` and `post_answer_eval_ui`.
+
 ## Configuration Files Checklist
 
 ### 0) `config.py` (project root, public runtime settings)
@@ -98,10 +103,10 @@ Must review and configure:
    - `BM25_PREWARM_COLLECTIONS` (CSV, default from `COLLECTION_LIST`)
    - `BM25_TEXT_COLUMN` (default `TEXT`)
    - `BM25_BATCH_SIZE` (default `40`)
-9. BM25 cache mounts:
+8. BM25 cache mounts:
    - `../../bm25_cache/ui:/app/bm25_cache` for `custom-rag-agent-ui`
    - `../../bm25_cache/mcp:/app/bm25_cache` for `bm25_mcp_server`
-10. BM25 MCP build artifacts:
+9. BM25 MCP build artifacts:
    - `deployment/docker/Dockerfile.mcp`
    - `deployment/docker/requirements.mcp.txt`
 
@@ -161,6 +166,21 @@ What to configure (only if needed):
    - `auth_basic_user_file /etc/nginx/.htpasswd`
 3. Upstream target:
    - `proxy_pass http://custom-rag-agent-ui:8501;`
+4. Forwarded authenticated user header:
+   - `proxy_set_header X-Forwarded-User $remote_user;`
+
+### 6) `deployment/sql/001_user_profile.sql`
+
+Path:
+`/home/ubuntu/custom_rag_agent/deployment/sql/001_user_profile.sql`
+
+Purpose:
+Bootstrap `USER_PROFILE` table and initial role mapping.
+
+Must do:
+1. Execute this script before validating role-based page visibility.
+2. Ensure each Basic Auth username has a row in `USER_PROFILE`.
+3. Seed includes user `luigi` with profile `ADMIN`.
 
 ## Runtime Configuration Mapping
 
@@ -183,6 +203,7 @@ test -f "$HOME/.oci/config" && echo "OK oci config"
 test -f deployment/docker/nginx/.htpasswd && echo "OK .htpasswd"
 test -f deployment/docker/Dockerfile.mcp && echo "OK Dockerfile.mcp"
 test -f deployment/docker/requirements.mcp.txt && echo "OK requirements.mcp.txt"
+test -f deployment/sql/001_user_profile.sql && echo "OK user profile SQL"
 test -d bm25_cache/ui && echo "OK bm25_cache/ui"
 test -d bm25_cache/mcp && echo "OK bm25_cache/mcp"
 ```
@@ -232,3 +253,5 @@ docker compose -f deployment/docker/docker-compose.yml logs -f bm25_mcp_server
    - Symptom: generated citation links do not resolve from browser.
 6. Missing BM25 cache directories (`bm25_cache/ui`, `bm25_cache/mcp`)
    - Symptom: cache persistence is not retained as expected.
+7. Missing/incorrect `USER_PROFILE` mapping
+   - Symptom: authenticated user gets default `USER` profile and cannot access admin-only pages.
