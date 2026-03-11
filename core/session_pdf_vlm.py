@@ -87,7 +87,7 @@ def scan_pdf_to_docs_with_vlm(
     pdf = pdfium.PdfDocument(pdf_path)
     total_pages = len(pdf)
 
-    if max_pages > 0 and total_pages > max_pages:
+    if 0 < max_pages < total_pages:
         raise ValueError(
             f"PDF has {total_pages} pages; maximum allowed is {max_pages} pages."
         )

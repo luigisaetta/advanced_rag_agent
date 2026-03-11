@@ -23,6 +23,11 @@ def test_answer_prompt_has_context_placeholder():
     assert "{context}" in prompts.ANSWER_PROMPT_TEMPLATE
 
 
+def test_gemini_answer_prompt_has_context_placeholder():
+    """Test Gemini answer prompt has context placeholder."""
+    assert "{context}" in prompts.GEMINI_ANSWER_PROMPT_TEMPLATE
+
+
 def test_reranker_prompt_has_required_placeholders():
     """Test test reranker prompt has required placeholders."""
     tpl = prompts.RERANKER_TEMPLATE

@@ -35,6 +35,7 @@ from py_zipkin.zipkin import zipkin_span
 from agent.agent_state import State
 from agent.prompts import (
     ANSWER_PROMPT_TEMPLATE,
+    GEMINI_ANSWER_PROMPT_TEMPLATE,
     apply_prompt_profile,
 )
 from core.oci_models import get_llm
@@ -73,6 +74,16 @@ class AnswerGenerator(Runnable):
 
         return _context
 
+    @staticmethod
+    def _select_answer_template(model_id: str) -> str:
+        """
+        Select a dedicated answer prompt for Gemini models.
+        """
+        model = str(model_id or "").strip().lower()
+        if model.startswith("google.gemini"):
+            return GEMINI_ANSWER_PROMPT_TEMPLATE
+        return ANSWER_PROMPT_TEMPLATE
+
     @zipkin_span(service_name=AGENT_NAME, span_name="answer_generation")
     def invoke(self, input: State, config=None, **kwargs):
         """
@@ -103,10 +114,11 @@ class AnswerGenerator(Runnable):
 
             # docs are returned from the reranker
             _context = self.build_context_for_llm(input["reranker_docs"])
+            answer_template = self._select_answer_template(model_id)
 
             system_prompt = PromptTemplate(
                 input_variables=["context"],
-                template=apply_prompt_profile(ANSWER_PROMPT_TEMPLATE, config=config),
+                template=apply_prompt_profile(answer_template, config=config),
             ).format(context=_context)
 
             messages = [

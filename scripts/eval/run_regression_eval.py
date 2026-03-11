@@ -9,6 +9,7 @@ PYTHONPATH=$(pwd) python scripts/eval/run_regression_eval.py \
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -17,10 +18,13 @@ from langchain_core.vectorstores import InMemoryVectorStore
 
 import config
 from agent.agent_state import State
+from agent.post_answer_evaluator import PostAnswerEvaluator
 from agent.rag_agent import create_workflow
 from core.oci_models import get_embedding_model
 from core.session_pdf_vlm import scan_pdf_to_docs_with_vlm
 from core.utils import docs_serializable
+
+ALLOWED_ROOT_CAUSES = {"NO_ISSUE", "RETRIEVAL", "RERANK", "GENERATION"}
 
 
 def _load_jsonl(path: Path) -> List[Dict[str, Any]]:
@@ -200,6 +204,8 @@ def _run_case(
     app,
     case: Dict[str, Any],
     model_id: str,
+    post_answer_model_id: str,
+    enable_post_answer_evaluation: bool,
     collection_name: str,
     enable_reranker: bool,
     session_cache: Dict[str, Dict[str, Any]],
@@ -241,6 +247,9 @@ def _run_case(
             "advanced_analysis_max_actions": config.ADVANCED_ANALYSIS_MAX_ACTIONS,
             "advanced_analysis_kb_top_k": config.ADVANCED_ANALYSIS_KB_TOP_K,
             "advanced_analysis_step_max_words": config.ADVANCED_ANALYSIS_STEP_MAX_WORDS,
+            "post_answer_evaluation_enabled": enable_post_answer_evaluation,
+            "post_answer_evaluation_model_id": post_answer_model_id,
+            "post_answer_evaluation_max_chars": config.POST_ANSWER_EVALUATION_MAX_CHARS,
         }
     }
 
@@ -251,6 +260,7 @@ def _run_case(
         )
     )
 
+    by_step: Dict[str, Dict[str, Any]] = {}
     predicted_intent: str = ""
     citations: List[Dict[str, Any]] = []
     reranker_docs_count = 0
@@ -263,6 +273,7 @@ def _run_case(
                 continue
             if payload.get("error"):
                 node_error = str(payload.get("error"))
+            by_step[node_name] = payload
             if node_name == "IntentClassifier":
                 predicted_intent = str(payload.get("search_intent", ""))
             elif node_name == "Rerank":
@@ -272,6 +283,35 @@ def _run_case(
                 answer_text = _collect_answer_text(payload.get("final_answer"))
             elif "final_answer" in payload:
                 answer_text = _collect_answer_text(payload.get("final_answer"))
+
+    retriever_docs: List[Dict[str, Any]] = []
+    for key in ("HybridFlow", "HybridSearch", "SessionSearch", "Search"):
+        payload = by_step.get(key, {}) or {}
+        docs = payload.get("retriever_docs", [])
+        if docs:
+            retriever_docs = list(docs)
+            break
+
+    rerank_payload = by_step.get("Rerank", {}) or {}
+    post_answer_root_cause = ""
+    if enable_post_answer_evaluation:
+        eval_input = State(
+            user_request=case["question"],
+            chat_history=[],
+            standalone_question=(by_step.get("QueryRewrite", {}) or {}).get(
+                "standalone_question", case["question"]
+            ),
+            retriever_docs=copy.deepcopy(retriever_docs),
+            reranker_docs=copy.deepcopy(rerank_payload.get("reranker_docs", [])),
+            final_answer=answer_text,
+            error=None,
+        )
+        eval_result = PostAnswerEvaluator().invoke(eval_input, config=cfg)
+        post_answer_root_cause = str(
+            eval_result.get("post_answer_root_cause", "")
+        ).upper()
+        if post_answer_root_cause not in ALLOWED_ROOT_CAUSES:
+            post_answer_root_cause = "NO_ISSUE"
 
     expected_intent = str(case.get("expected_intent", "")).strip().upper()
     expected_sources = _normalize_expected_sources(
@@ -326,6 +366,7 @@ def _run_case(
         "missing_expected_citations": missing_expected_citations,
         "citations_recall": citations_recall,
         "must_contain_ok": must_contain_ok,
+        "post_answer_root_cause": post_answer_root_cause,
         "node_error": node_error,
         "pass": all(
             [intent_ok, sources_ok, citations_ok, must_contain_ok, not node_error]
@@ -413,6 +454,7 @@ def _print_run_configuration(
         "out": str(out_path),
         "cases_to_run": rows_count,
         "model_id_answer": args.model_id,
+        "model_id_post_answer_eval": args.post_answer_model_id,
         "model_id_intent_classifier": config.INTENT_MODEL_ID,
         "model_id_reranker": config.RERANKER_MODEL_ID,
         "model_id_vlm_session_pdf": config.VLM_MODEL_ID,
@@ -424,7 +466,7 @@ def _print_run_configuration(
         "advanced_analysis_risk_validation_kb_top_k": config.ADVANCED_ANALYSIS_RISK_VALIDATION_KB_TOP_K,
         "main_language": config.MAIN_LANGUAGE,
         "session_pdf_max_pages": config.SESSION_PDF_MAX_PAGES,
-        "post_answer_evaluation_enabled": config.POST_ANSWER_EVALUATION_ENABLED,
+        "post_answer_evaluation_enabled": not args.disable_post_answer_evaluation,
     }
     print("Run configuration:")
     print(json.dumps(run_cfg, indent=2, ensure_ascii=True))
@@ -443,6 +485,11 @@ def main() -> None:
         help="Path to output JSON report.",
     )
     parser.add_argument("--model-id", default=config.LLM_MODEL_ID, help="LLM model id.")
+    parser.add_argument(
+        "--post-answer-model-id",
+        default=config.POST_ANSWER_EVALUATION_MODEL_ID,
+        help="Model id used by post-answer evaluator.",
+    )
     parser.add_argument(
         "--collection-name",
         default=config.DEFAULT_COLLECTION,
@@ -464,7 +511,22 @@ def main() -> None:
         action="store_true",
         help="Print detailed mismatch diagnostics (including expected/observed citations).",
     )
+    parser.add_argument(
+        "--post-answer-categories-only",
+        action="store_true",
+        help="Output only post-answer root-cause category per question.",
+    )
+    parser.add_argument(
+        "--disable-post-answer-evaluation",
+        action="store_true",
+        help="Disable post-answer evaluation step.",
+    )
     args = parser.parse_args()
+
+    if args.post_answer_categories_only and args.disable_post_answer_evaluation:
+        raise ValueError(
+            "--post-answer-categories-only requires post-answer evaluation to be enabled."
+        )
 
     dataset_path = Path(args.dataset).expanduser().resolve()
     out_path = Path(args.out).expanduser().resolve()
@@ -488,6 +550,8 @@ def main() -> None:
                 app=app,
                 case=row,
                 model_id=args.model_id,
+                post_answer_model_id=args.post_answer_model_id,
+                enable_post_answer_evaluation=not args.disable_post_answer_evaluation,
                 collection_name=args.collection_name,
                 enable_reranker=not args.disable_reranker,
                 session_cache=session_cache,
@@ -504,25 +568,48 @@ def main() -> None:
                 "citations_ok": False,
                 "must_contain_ok": False,
                 "reranker_docs_count": 0,
+                "post_answer_root_cause": "",
             }
         results.append(result)
 
-    summary = _score(results)
-    report = {
-        "dataset": str(dataset_path),
-        "model_id": args.model_id,
-        "collection_name": args.collection_name,
-        "reranker_enabled": not args.disable_reranker,
-        "summary": summary,
-        "results": results,
-    }
+    if args.post_answer_categories_only:
+        categories = [
+            {
+                "id": r.get("id", ""),
+                "question": r.get("question", ""),
+                "root_cause": r.get("post_answer_root_cause", "NO_ISSUE"),
+            }
+            for r in results
+        ]
+        report = {
+            "dataset": str(dataset_path),
+            "model_id_answer": args.model_id,
+            "model_id_post_answer_eval": args.post_answer_model_id,
+            "results": categories,
+        }
+    else:
+        summary = _score(results)
+        report = {
+            "dataset": str(dataset_path),
+            "model_id": args.model_id,
+            "collection_name": args.collection_name,
+            "reranker_enabled": not args.disable_reranker,
+            "summary": summary,
+            "results": results,
+        }
     out_path.write_text(
         json.dumps(report, indent=2, ensure_ascii=True), encoding="utf-8"
     )
 
-    print("")
-    print("Summary:")
-    print(json.dumps(summary, indent=2))
+    if args.post_answer_categories_only:
+        print("")
+        print("Post-answer categories:")
+        for item in report["results"]:
+            print(f"- {item['id']}: {item['root_cause']}")
+    else:
+        print("")
+        print("Summary:")
+        print(json.dumps(summary, indent=2))
     print(f"\nSaved report: {out_path}")
 
 

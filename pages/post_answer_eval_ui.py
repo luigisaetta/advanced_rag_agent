@@ -104,11 +104,19 @@ with col2:
 with col3:
     use_date_from = st.checkbox("Use from date", value=False)
     date_from = st.date_input(
-        "From date", value=date.today(), disabled=not use_date_from
+        "From date",
+        value=date.today(),
+        disabled=not use_date_from,
+        label_visibility="collapsed",
     )
 with col4:
     use_date_to = st.checkbox("Use to date", value=False)
-    date_to = st.date_input("To date", value=date.today(), disabled=not use_date_to)
+    date_to = st.date_input(
+        "To date",
+        value=date.today(),
+        disabled=not use_date_to,
+        label_visibility="collapsed",
+    )
 with col5:
     llm_model_id_filter = st.selectbox("LLM model id", LLM_MODEL_OPTIONS, index=0)
 
