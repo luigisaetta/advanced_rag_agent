@@ -18,6 +18,9 @@ from config import DEBUG, COLLECTION_LIST, VLM_MODEL_ID
 from core.db_utils import list_collections, list_books_in_collection
 from core.session_pdf_vlm import scan_pdf_to_docs_with_vlm
 from core.utils import get_console_logger
+from ui.access_control import require_admin_page_access
+
+require_admin_page_access()
 
 # init session
 if COLLECTION_LIST:

@@ -16,6 +16,9 @@ import streamlit as st
 from config import MODEL_LIST
 from core.post_answer_feedback import PostAnswerFeedback
 from core.utils import get_console_logger
+from ui.access_control import require_admin_page_access
+
+require_admin_page_access()
 
 logger = get_console_logger()
 

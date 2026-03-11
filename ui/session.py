@@ -17,12 +17,45 @@ License:
 """
 
 import uuid
+from typing import Any
 
 import streamlit as st
 
 import config
 from agent.rag_agent import create_workflow
+from core.user_profile import get_user_profile
 from prompt_profiles import PROMPT_PROFILES, DEFAULT_PROMPT_PROFILE
+
+
+def get_authenticated_user(default_user: str = "anonymous") -> str:
+    """
+    Resolve authenticated username forwarded by reverse proxy.
+    """
+    try:
+        headers: Any = st.context.headers
+    except Exception:
+        headers = None
+
+    if headers:
+        for key in (
+            "x-forwarded-user",
+            "x-authenticated-user",
+            "remote-user",
+        ):
+            value = headers.get(key)
+            if value:
+                return str(value).split(",")[0].strip()
+
+        for key, value in headers.items():
+            if str(key).lower() in (
+                "x-forwarded-user",
+                "x-authenticated-user",
+                "remote-user",
+            ):
+                if value:
+                    return str(value).split(",")[0].strip()
+
+    return default_user
 
 
 def init_session_state() -> None:
@@ -72,6 +105,16 @@ def init_session_state() -> None:
         st.session_state.session_pdf_vector_store = None
     if "session_pdf_docs" not in st.session_state:
         st.session_state.session_pdf_docs = []
+    authenticated_user = get_authenticated_user(
+        st.session_state.get("authenticated_user", "anonymous")
+    )
+    st.session_state.authenticated_user = authenticated_user
+    if (
+        "user_profile" not in st.session_state
+        or st.session_state.get("user_profile_username") != authenticated_user
+    ):
+        st.session_state.user_profile = get_user_profile(authenticated_user)
+        st.session_state.user_profile_username = authenticated_user
 
 
 def reset_conversation() -> None:

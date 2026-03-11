@@ -26,9 +26,15 @@ import streamlit as st
 
 from core.utils import get_console_logger
 from ui.agent_runner import handle_question
+from ui.access_control import hide_admin_only_pages_in_sidebar
 from ui.feedback import register_feedback
 from ui.rendering import display_msg_on_rerun
-from ui.session import get_chat_history, init_session_state, reset_conversation
+from ui.session import (
+    get_authenticated_user,
+    get_chat_history,
+    init_session_state,
+    reset_conversation,
+)
 from ui.sidebar import render_sidebar, scan_pdf_and_store_in_session
 
 
@@ -48,6 +54,13 @@ logger = get_console_logger()
 
 
 init_session_state()
+logger.info(
+    "Authenticated user=%s profile=%s thread_id=%s",
+    get_authenticated_user(),
+    st.session_state.get("user_profile"),
+    st.session_state.get("thread_id"),
+)
+hide_admin_only_pages_in_sidebar()
 
 st.title("OCI Enterprise Knowledge Assistant")
 
