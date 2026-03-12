@@ -8,7 +8,7 @@ on:
 
 jobs:
   quality:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 45
 
     steps:
@@ -20,13 +20,13 @@ jobs:
         with:
           python-version: "3.11"
           cache: "pip"
-          cache-dependency-path: requirements.txt
+          cache-dependency-path: deployment/docker/requirements.runtime.txt
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest-cov fastmcp
+          pip install -r deployment/docker/requirements.runtime.txt
+          pip install black pylint pytest pytest-cov fastapi fastmcp
 
       - name: Prepare CI private config placeholder
         run: |
