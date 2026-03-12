@@ -28,6 +28,12 @@ jobs:
           pip install -r requirements.txt
           pip install pytest-cov
 
+      - name: Prepare CI private config placeholder
+        run: |
+          if [ ! -f config_private.py ]; then
+            cp config_private_template.py config_private.py
+          fi
+
       - name: Black (check)
         run: black --check .
 
