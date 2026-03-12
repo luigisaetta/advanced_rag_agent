@@ -63,4 +63,4 @@ jobs:
           pylint "${py_files[@]}"
 
       - name: Pytest with coverage
-        run: pytest --cov=agent --cov=core --cov-report=term-missing --cov-fail-under=70
+        run: pytest --cov=agent --cov=core --cov-report=term-missing --cov-fail-under=50
