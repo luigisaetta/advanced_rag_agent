@@ -2,3 +2,9 @@
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 addopts = "-q"
+
+[tool.coverage.run]
+omit = [
+    "config_private_luigi.py",
+    "config_private_template.py",
+]
