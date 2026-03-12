@@ -51,3 +51,21 @@ def test_build_citation_url_encodes_document_name(monkeypatch):
     url = citation_utils.build_citation_url("doc name v1.pdf", 1)
 
     assert url == "http://localhost:8008/doc%20name%20v1/page0001.png"
+
+
+def test_build_citation_url_supports_relative_base_path(monkeypatch):
+    """Relative base path should produce a relative citation URL."""
+    monkeypatch.setattr(config, "CITATION_BASE_URL", "/citations/")
+
+    url = citation_utils.build_citation_url("mydoc.pdf", 3)
+
+    assert url == "/citations/mydoc/page0003.png"
+
+
+def test_build_citation_url_normalizes_shorthand_relative_base(monkeypatch):
+    """Shorthand relative base should be normalized with leading slash."""
+    monkeypatch.setattr(config, "CITATION_BASE_URL", "citations")
+
+    url = citation_utils.build_citation_url("mydoc.pdf", 3)
+
+    assert url == "/citations/mydoc/page0003.png"

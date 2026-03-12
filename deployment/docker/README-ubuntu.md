@@ -39,8 +39,8 @@ newgrp docker
 ## 2) Clone project and prepare files
 
 ```bash
-git clone <YOUR_REPO_URL> custom_rag_agent
-cd custom_rag_agent
+git clone <YOUR_REPO_URL> advanced_rag_agent
+cd advanced_rag_agent
 ```
 
 Create private config:

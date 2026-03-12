@@ -38,8 +38,8 @@ services:
         "--directory",
         "/data/citations",
       ]
-    ports:
-      - "${CITATION_SERVER_BIND_IP:-0.0.0.0}:${CITATION_SERVER_PORT:-8008}:8008"
+    expose:
+      - "8008"
     volumes:
       - /Users/lsaetta/Progetti/work-iren/pages:/data/citations:ro
     restart: unless-stopped
@@ -55,7 +55,7 @@ services:
       - VECTOR_WALLET_DIR=/app/wallet_atp
       - OCI_CONFIG_FILE=/root/.oci/config
       - OCI_CLI_PROFILE=DEFAULT
-      - CITATION_BASE_URL=${CITATION_BASE_URL:-http://127.0.0.1:8008/}
+      - CITATION_BASE_URL=${CITATION_BASE_URL:-/citations/}
       - BM25_CACHE_DIR=/app/bm25_cache
     volumes:
       - ../../config_private.py:/app/config_private.py:ro
@@ -71,6 +71,7 @@ services:
     container_name: nginx_streamlit
     depends_on:
       - custom-rag-agent-ui
+      - citation_image_server
     ports:
       - "8501:80"
     volumes:

@@ -170,5 +170,5 @@ CHUNK_OVERLAP = 100
 # section for citation server
 CITATION_SERVER_PORT = int(os.getenv("CITATION_SERVER_PORT", "8008"))
 CITATION_BASE_URL = os.getenv(
-    "CITATION_BASE_URL", f"http://127.0.0.1:{CITATION_SERVER_PORT}/"
+    "CITATION_BASE_URL", "/citations/"
 )
