@@ -210,6 +210,13 @@ def _detect_question_language(user_request: str) -> str:
     return _detect_language_from_text(user_request)
 
 
+def detect_question_language(user_request: str) -> str:
+    """
+    Public wrapper for user-request language detection.
+    """
+    return _detect_question_language(user_request)
+
+
 def _detect_language_from_session_docs(session_docs: list) -> str:
     """
     Detect language from serialized session PDF chunks.
@@ -232,6 +239,13 @@ def _detect_language_from_session_docs(session_docs: list) -> str:
     if not sample:
         return "en"
     return _detect_language_from_text(sample)
+
+
+def detect_language_from_session_docs(session_docs: list) -> str:
+    """
+    Public wrapper for session-doc language detection.
+    """
+    return _detect_language_from_session_docs(session_docs)
 
 
 def _resolve_output_language(main_language: str, user_request: str) -> str:
@@ -637,6 +651,13 @@ class AdvancedAnalysisRunner(Runnable):
         return "\n\n".join(parts) if parts else "No KB evidence retrieved."
 
     @staticmethod
+    def format_kb_context(kb_docs: list, max_chars: int = 8000) -> str:
+        """Public wrapper for KB context formatting."""
+        return AdvancedAnalysisRunner._format_kb_context(
+            kb_docs=kb_docs, max_chars=max_chars
+        )
+
+    @staticmethod
     def _kb_semantic_docs(query: str, collection_name: str, top_k: int) -> list:
         """Helper for kb semantic docs."""
         embed_model = get_embedding_model()
@@ -690,6 +711,13 @@ class AdvancedAnalysisRunner(Runnable):
             top_k=max(top_k, HYBRID_TOP_K),
         )
         return self._merge_docs(semantic_docs, bm25_docs)
+
+    @classmethod
+    def kb_search_docs(cls, query: str, collection_name: str, top_k: int) -> list:
+        """Public wrapper for KB retrieval."""
+        return cls()._kb_search_docs(
+            query=query, collection_name=collection_name, top_k=top_k
+        )
 
     @staticmethod
     def _build_citations(step_no: int, selected_chunks: list, kb_docs: list) -> list:
@@ -1187,13 +1215,13 @@ class RiskValidator(Runnable):
                     )
                     kb_top_k = max(1, kb_top_k)
                     query = self._build_kb_query(user_request, claims)
-                    kb_docs = AdvancedAnalysisRunner()._kb_search_docs(
+                    kb_docs = AdvancedAnalysisRunner.kb_search_docs(
                         query=query,
                         collection_name=configurable.get("collection_name", "UNKNOWN"),
                         top_k=kb_top_k,
                     )
-                    kb_context = AdvancedAnalysisRunner._format_kb_context(
-                        kb_docs, max_chars=6000
+                    kb_context = AdvancedAnalysisRunner.format_kb_context(
+                        kb_docs=kb_docs, max_chars=6000
                     )
                     validate_prompt = PromptTemplate(
                         input_variables=["user_request", "claims", "kb_context"],

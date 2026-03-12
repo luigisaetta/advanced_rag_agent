@@ -240,7 +240,9 @@ def _generate_questions(
         )
         try:
             response = run_with_retry(
-                lambda: llm.invoke([HumanMessage(content=prompt)]),
+                lambda prompt_text=prompt: llm.invoke(
+                    [HumanMessage(content=prompt_text)]
+                ),
                 max_attempts=config.LLM_MAX_RETRIES,
                 operation_name="Generate regression questions",
             )
