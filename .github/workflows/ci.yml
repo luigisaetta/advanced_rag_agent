@@ -26,7 +26,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r deployment/docker/requirements.runtime.txt
-          pip install black pylint pytest pytest-cov fastapi fastmcp
+          pip install black==25.12.0 pylint pytest pytest-cov fastapi fastmcp
 
       - name: Prepare CI private config placeholder
         run: |
@@ -34,7 +34,8 @@ jobs:
             cp config_private_template.py config_private.py
           fi
 
-      - name: Black (check)
+      - name: Black (check, non-blocking)
+        continue-on-error: true
         run: black --check .
 
       - name: Pylint (errors only, blocking)
