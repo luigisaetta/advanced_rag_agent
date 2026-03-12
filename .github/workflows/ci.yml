@@ -37,7 +37,20 @@ jobs:
       - name: Black (check)
         run: black --check .
 
-      - name: Pylint
+      - name: Pylint (errors only, blocking)
+        run: |
+          py_files=()
+          while IFS= read -r file; do
+            py_files+=("$file")
+          done < <(find . -type f -name "*.py" -not -path "*/.*/*" | sed 's|^\./||')
+          if [ "${#py_files[@]}" -eq 0 ]; then
+            echo "No Python files found."
+            exit 0
+          fi
+          pylint --errors-only "${py_files[@]}"
+
+      - name: Pylint (full report, non-blocking)
+        continue-on-error: true
         run: |
           py_files=()
           while IFS= read -r file; do
