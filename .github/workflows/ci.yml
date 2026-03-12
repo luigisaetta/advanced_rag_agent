@@ -33,7 +33,10 @@ jobs:
 
       - name: Pylint
         run: |
-          mapfile -t py_files < <(find . -type f -name "*.py" -not -path "*/.*/*" | sed 's|^\./||')
+          py_files=()
+          while IFS= read -r file; do
+            py_files+=("$file")
+          done < <(find . -type f -name "*.py" -not -path "*/.*/*" | sed 's|^\./||')
           if [ "${#py_files[@]}" -eq 0 ]; then
             echo "No Python files found."
             exit 0
