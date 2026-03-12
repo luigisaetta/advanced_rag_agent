@@ -73,8 +73,10 @@ def render_sidebar(reset_callback):
         st.session_state.enable_reranker = st.checkbox(
             "Enable Reranker", value=True, disabled=False
         )
-        config.ENABLE_TRACING = st.checkbox(
-            "Enable tracing", value=False, disabled=False
+        st.session_state.enable_tracing = st.checkbox(
+            "Enable tracing",
+            value=st.session_state.enable_tracing,
+            disabled=False,
         )
         st.session_state.enable_post_answer_evaluation = st.checkbox(
             "Enable Post Answer Evaluation",
@@ -91,7 +93,8 @@ def render_sidebar(reset_callback):
         disabled=not st.session_state.enable_advanced_analysis,
         help=(
             "Run an additional post-synthesis validation step. "
-            "If critical negative findings are detected, it may query KB (unless session-only mode is active)."
+            "If critical negative findings are detected, "
+            "it may query KB (unless session-only mode is active)."
         ),
     )
 

@@ -273,9 +273,14 @@ def _get_report_labels(lang: str) -> dict:
             "step_title": "Passo",
             "final_synthesis_title": "Sintesi Finale",
             "risk_validation_title": "Validazione Rischi",
-            "no_plan": "L'analisi avanzata non puo essere eseguita perche non è stato generato alcun piano.",
+            "no_plan": (
+                "L'analisi avanzata non puo essere eseguita "
+                "perche non è stato generato alcun piano."
+            ),
             "no_steps": "L'analisi avanzata non ha prodotto risultati intermedi da sintetizzare.",
-            "risk_validation_skipped_session_only": "Validazione KB saltata: session-only mode attiva.",
+            "risk_validation_skipped_session_only": (
+                "Validazione KB saltata: session-only mode attiva."
+            ),
             "risk_validation_no_critical": "Nessun aspetto negativo critico identificato.",
         },
         "fr": {
@@ -284,7 +289,9 @@ def _get_report_labels(lang: str) -> dict:
             "risk_validation_title": "Validation des Risques",
             "no_plan": "L'analyse avancee n'a pas pu etre executee car aucun plan n'a ete genere.",
             "no_steps": "L'analyse avancee n'a produit aucun resultat intermediaire a synthetiser.",
-            "risk_validation_skipped_session_only": "Validation KB ignoree: mode session-only actif.",
+            "risk_validation_skipped_session_only": (
+                "Validation KB ignoree: mode session-only actif."
+            ),
             "risk_validation_no_critical": "Aucun point negatif critique detecte.",
         },
         "es": {
@@ -293,7 +300,9 @@ def _get_report_labels(lang: str) -> dict:
             "risk_validation_title": "Validacion de Riesgos",
             "no_plan": "El analisis avanzado no pudo ejecutarse porque no se genero ningun plan.",
             "no_steps": "El analisis avanzado no genero resultados intermedios para sintetizar.",
-            "risk_validation_skipped_session_only": "Validacion KB omitida: modo solo sesion activo.",
+            "risk_validation_skipped_session_only": (
+                "Validacion KB omitida: modo solo sesion activo."
+            ),
             "risk_validation_no_critical": "No se detectaron hallazgos negativos criticos.",
         },
         "en": {
@@ -302,7 +311,9 @@ def _get_report_labels(lang: str) -> dict:
             "risk_validation_title": "Risk Validation",
             "no_plan": "Advanced analysis could not run because no execution plan was generated.",
             "no_steps": "Advanced analysis did not produce step outputs to synthesize.",
-            "risk_validation_skipped_session_only": "KB validation skipped: session-only mode is active.",
+            "risk_validation_skipped_session_only": (
+                "KB validation skipped: session-only mode is active."
+            ),
             "risk_validation_no_critical": "No critical negative findings detected.",
         },
     }
@@ -829,7 +840,8 @@ class AdvancedAnalysisRunner(Runnable):
                     session_docs, chunk_numbers, radius=1
                 )
 
-            # robust fallback: if planner pointers are weak/missing, retrieve from session store by step query
+            # robust fallback: if planner pointers are weak/missing,
+            # retrieve from session store by step query
             step_query = f"{user_request}\n{section}\n{objective}".strip()
             if kb_query:
                 step_query = f"{step_query}\n{kb_query}"
@@ -1200,7 +1212,10 @@ class RiskValidator(Runnable):
                     citations.extend(self._kb_validation_citations(kb_docs))
                 except Exception as exc:
                     logger.warning("Risk validation KB check failed: %s", exc)
-                    validation_text = "Risk validation could not be completed due to a transient issue."
+                    validation_text = (
+                        "Risk validation could not be completed "
+                        "due to a transient issue."
+                    )
 
         final_answer_out = (
             final_answer + f"\n\n---\n\n## {section_title}\n" + validation_text

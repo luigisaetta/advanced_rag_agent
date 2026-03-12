@@ -10,10 +10,11 @@ import pypdfium2 as pdfium
 from langchain_core.documents import Document
 from langchain_core.messages import HumanMessage
 
+from core.retry_utils import run_with_retry
 from core.chunk_index_utils import get_recursive_text_splitter
 from core.oci_models import get_llm
 from core.utils import get_console_logger, remove_path_from_ref
-from config import SESSION_PDF_MAX_PAGES
+from config import LLM_MAX_RETRIES, SESSION_PDF_MAX_PAGES
 
 logger = get_console_logger()
 
@@ -49,7 +50,7 @@ def _page_to_data_url(page) -> str:
     return f"data:image/png;base64,{encoded}"
 
 
-def _ocr_page_with_vlm(llm, page_data_url: str) -> str:
+def _ocr_page_with_vlm(llm, page_data_url: str, page_number: int) -> str:
     """
     OCR one page image using a VLM.
     """
@@ -68,7 +69,11 @@ def _ocr_page_with_vlm(llm, page_data_url: str) -> str:
         )
     ]
 
-    response = llm.invoke(messages)
+    response = run_with_retry(
+        lambda: llm.invoke(messages),
+        max_attempts=LLM_MAX_RETRIES,
+        operation_name=f"VLM OCR page {page_number}",
+    )
     return _extract_text_from_vlm_response(response.content)
 
 
@@ -104,7 +109,22 @@ def scan_pdf_to_docs_with_vlm(
     for idx in range(total_pages):
         page = pdf[idx]
         page_data_url = _page_to_data_url(page)
-        page_text = _ocr_page_with_vlm(llm, page_data_url)
+        try:
+            page_text = _ocr_page_with_vlm(
+                llm=llm,
+                page_data_url=page_data_url,
+                page_number=idx + 1,
+            )
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            logger.warning(
+                "Skipping page %d/%d due to OCR failure after retries: %s",
+                idx + 1,
+                total_pages,
+                exc,
+            )
+            if on_progress:
+                on_progress(idx + 1, total_pages)
+            continue
 
         if page_text:
             splits = (

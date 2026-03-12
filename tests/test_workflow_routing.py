@@ -10,19 +10,24 @@ Description: End-to-end workflow routing tests with mocked nodes.
 import pytest
 from langchain_core.runnables import Runnable
 
+# Runnable.invoke uses `input` as parameter name; keep it for signature compatibility.
+# pylint: disable=redefined-builtin
+
 
 rag_module = pytest.importorskip("agent.rag_agent")
 
 
 class _FakeModerator(Runnable):
-    def invoke(self, input_state, config=None, **kwargs):
+    def invoke(self, input, config=None, **kwargs):
         """Invoke."""
+        input_state = input
         return {"error": input_state.get("error")}
 
 
 class _FakeQueryRewriter(Runnable):
-    def invoke(self, input_state, config=None, **kwargs):
+    def invoke(self, input, config=None, **kwargs):
         """Invoke."""
+        input_state = input
         return {
             "standalone_question": input_state.get("user_request", ""),
             "error": input_state.get("error"),
@@ -30,8 +35,9 @@ class _FakeQueryRewriter(Runnable):
 
 
 class _FakeIntentClassifier(Runnable):
-    def invoke(self, input_state, config=None, **kwargs):
+    def invoke(self, input, config=None, **kwargs):
         """Invoke."""
+        input_state = input
         configurable = (config or {}).get("configurable", {})
         session_vs = configurable.get("session_pdf_vector_store")
         chunks_count = configurable.get("session_pdf_chunks_count", 0)
@@ -56,8 +62,9 @@ class _FakeIntentClassifier(Runnable):
 
 
 class _FakeSearch(Runnable):
-    def invoke(self, input_state, config=None, **kwargs):
+    def invoke(self, input, config=None, **kwargs):
         """Invoke."""
+        input_state = input
         docs = [
             {
                 "page_content": "semantic chunk",
@@ -72,8 +79,9 @@ class _FakeSearch(Runnable):
 
 
 class _FakeHybridQueryBuilder(Runnable):
-    def invoke(self, input_state, config=None, **kwargs):
+    def invoke(self, input, config=None, **kwargs):
         """Invoke."""
+        input_state = input
         return {
             "kb_query": f"kb::{input_state.get('standalone_question', '')}",
             "error": input_state.get("error"),
@@ -81,8 +89,9 @@ class _FakeHybridQueryBuilder(Runnable):
 
 
 class _FakeSessionSearch(Runnable):
-    def invoke(self, input_state, config=None, **kwargs):
+    def invoke(self, input, config=None, **kwargs):
         """Invoke."""
+        input_state = input
         docs = [
             {
                 "page_content": "session only chunk",
@@ -97,8 +106,9 @@ class _FakeSessionSearch(Runnable):
 
 
 class _FakeHybridSearch(Runnable):
-    def invoke(self, input_state, config=None, **kwargs):
+    def invoke(self, input, config=None, **kwargs):
         """Invoke."""
+        input_state = input
         docs = list(input_state.get("retriever_docs", []))
         docs.append(
             {
@@ -114,8 +124,9 @@ class _FakeHybridSearch(Runnable):
 
 
 class _FakeHybridSessionSearch(Runnable):
-    def invoke(self, input_state, config=None, **kwargs):
+    def invoke(self, input, config=None, **kwargs):
         """Invoke."""
+        input_state = input
         docs = []
         if input_state.get("search_intent") == "HYBRID":
             docs.append(
@@ -132,8 +143,9 @@ class _FakeHybridSessionSearch(Runnable):
 
 
 class _FakeHybridDocsMerge(Runnable):
-    def invoke(self, input_state, config=None, **kwargs):
+    def invoke(self, input, config=None, **kwargs):
         """Invoke."""
+        input_state = input
         kb_docs = list(input_state.get("retriever_docs", []))
         session_docs = list(input_state.get("session_retriever_docs", []))
         return {
@@ -143,14 +155,16 @@ class _FakeHybridDocsMerge(Runnable):
 
 
 class _FakeAdvancedPlanner(Runnable):
-    def invoke(self, input_state, config=None, **kwargs):
+    def invoke(self, input, config=None, **kwargs):
         """Invoke."""
+        input_state = input
         return {"advanced_plan": [], "error": input_state.get("error")}
 
 
 class _FakeAdvancedRunner(Runnable):
-    def invoke(self, input_state, config=None, **kwargs):
+    def invoke(self, input, config=None, **kwargs):
         """Invoke."""
+        input_state = input
         return {
             "advanced_step_outputs": ["### Step 1 - mock\nmock step output"],
             "citations": [],
@@ -159,8 +173,9 @@ class _FakeAdvancedRunner(Runnable):
 
 
 class _FakeAdvancedFinalSynthesis(Runnable):
-    def invoke(self, input_state, config=None, **kwargs):
+    def invoke(self, input, config=None, **kwargs):
         """Invoke."""
+        input_state = input
         return {
             "final_answer": "advanced placeholder with synthesis",
             "citations": input_state.get("citations", []),
@@ -169,8 +184,9 @@ class _FakeAdvancedFinalSynthesis(Runnable):
 
 
 class _FakeRiskValidator(Runnable):
-    def invoke(self, input_state, config=None, **kwargs):
+    def invoke(self, input, config=None, **kwargs):
         """Invoke."""
+        input_state = input
         return {
             "final_answer": input_state.get("final_answer", ""),
             "citations": input_state.get("citations", []),
@@ -179,8 +195,9 @@ class _FakeRiskValidator(Runnable):
 
 
 class _FakeRerank(Runnable):
-    def invoke(self, input_state, config=None, **kwargs):
+    def invoke(self, input, config=None, **kwargs):
         """Invoke."""
+        input_state = input
         docs = input_state.get("retriever_docs", [])
         citations = [
             {
@@ -200,8 +217,9 @@ class _FakeRerank(Runnable):
 
 
 class _FakeAnswer(Runnable):
-    def invoke(self, input_state, config=None, **kwargs):
+    def invoke(self, input, config=None, **kwargs):
         """Invoke."""
+        input_state = input
         return {"final_answer": "ok", "error": input_state.get("error")}
 
 

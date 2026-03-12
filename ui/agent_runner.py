@@ -19,6 +19,7 @@ License:
 import copy
 import time
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import nullcontext
 
 import streamlit as st
 from langchain_core.messages import AIMessage, HumanMessage
@@ -51,7 +52,7 @@ def _build_agent_config(progress_callback):
             # Default is false. SESSION_DOC sets this at runtime via classifier output.
             # This key allows explicit script/config control when needed.
             "advanced_analysis_session_only": False,
-            "enable_tracing": config.ENABLE_TRACING,
+            "enable_tracing": st.session_state.enable_tracing,
             "main_language": config.MAIN_LANGUAGE,
             "prompt_profile": st.session_state.prompt_profile,
             "collection_name": st.session_state.collection_name,
@@ -64,7 +65,9 @@ def _build_agent_config(progress_callback):
             "advanced_analysis_step_max_words": config.ADVANCED_ANALYSIS_STEP_MAX_WORDS,
             # Runtime toggle from UI (default sourced from config).
             "advanced_analysis_enable_risk_validation": st.session_state.enable_risk_validation,
-            "advanced_analysis_risk_validation_kb_top_k": config.ADVANCED_ANALYSIS_RISK_VALIDATION_KB_TOP_K,
+            "advanced_analysis_risk_validation_kb_top_k": (
+                config.ADVANCED_ANALYSIS_RISK_VALIDATION_KB_TOP_K
+            ),
             "post_answer_evaluation_enabled": st.session_state.enable_post_answer_evaluation,
             "post_answer_evaluation_model_id": config.POST_ANSWER_EVALUATION_MODEL_ID,
             "post_answer_evaluation_max_chars": config.POST_ANSWER_EVALUATION_MAX_CHARS,
@@ -169,13 +172,19 @@ def handle_question(question: str, logger) -> None:
         logger.info("Agent config: %s", redact_agent_config_for_log(agent_config))
         logger.info("")
 
-        with zipkin_span(
-            service_name=config.AGENT_NAME,
-            span_name="stream",
-            transport_handler=http_transport,
-            encoding=Encoding.V2_JSON,
-            sample_rate=100,
-        ):
+        tracing_enabled = bool(agent_config["configurable"].get("enable_tracing", True))
+        tracing_context = (
+            zipkin_span(
+                service_name=config.AGENT_NAME,
+                span_name="stream",
+                transport_handler=http_transport,
+                encoding=Encoding.V2_JSON,
+                sample_rate=100,
+            )
+            if tracing_enabled
+            else nullcontext()
+        )
+        with tracing_context:
             for event in st.session_state.workflow.stream(
                 input_state, config=agent_config
             ):

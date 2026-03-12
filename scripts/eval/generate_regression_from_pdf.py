@@ -217,6 +217,7 @@ def _generate_questions(
     )
     llm = get_llm(model_id=model_id, temperature=0.2)
     allowed_pages = {row["page"] for row in selected_pages}
+    remaining_pages = list(selected_pages)
     unique_questions = set()
     out: List[Tuple[str, str]] = []
 
@@ -224,17 +225,34 @@ def _generate_questions(
         missing = questions_count - len(out)
         if missing <= 0:
             break
+        if not remaining_pages:
+            logger.warning(
+                "No pages left to process after skips. Collected %d/%d questions.",
+                len(out),
+                questions_count,
+            )
+            break
 
         prompt = _build_generation_prompt(
-            selected_pages=selected_pages,
+            selected_pages=remaining_pages,
             questions_count=max(questions_count, missing),
             file_stem=file_stem,
         )
-        response = run_with_retry(
-            lambda: llm.invoke([HumanMessage(content=prompt)]),
-            max_attempts=config.LLM_MAX_RETRIES,
-            operation_name="Generate regression questions",
-        )
+        try:
+            response = run_with_retry(
+                lambda: llm.invoke([HumanMessage(content=prompt)]),
+                max_attempts=config.LLM_MAX_RETRIES,
+                operation_name="Generate regression questions",
+            )
+        except Exception as exc:  # pylint: disable=broad-exception-caught
+            skipped_page = remaining_pages.pop()
+            logger.warning(
+                "Generation request failed after retries: %s. "
+                "Skipping page=%s and continuing.",
+                exc,
+                skipped_page.get("page", "unknown"),
+            )
+            continue
         candidates = _parse_questions_json(getattr(response, "content", ""))
         accepted_this_attempt = 0
 
@@ -300,7 +318,7 @@ def _write_jsonl(rows: List[Dict[str, object]], out_path: Path) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", encoding="utf-8") as fh:
         for idx, row in enumerate(rows, start=1):
-            fh.write(json.dumps(row, ensure_ascii=True) + "\n")
+            fh.write(json.dumps(row, ensure_ascii=False) + "\n")
             if idx == 1 or idx % 25 == 0 or idx == len(rows):
                 logger.info("Write progress: %d/%d rows", idx, len(rows))
     logger.info("Dataset write completed: %s", out_path)
@@ -420,12 +438,14 @@ def main() -> None:
         file_stem=file_stem,
     )
     if len(qa_rows) < int(args.questions):
-        raise RuntimeError(
-            f"Could not generate enough valid questions: {len(qa_rows)}/{args.questions}."
+        logger.warning(
+            "Generated fewer valid questions than requested: %d/%d.",
+            len(qa_rows),
+            int(args.questions),
         )
 
     dataset_rows = _to_jsonl_rows(
-        qa_rows=qa_rows[: int(args.questions)],
+        qa_rows=qa_rows[: min(int(args.questions), len(qa_rows))],
         source_name=source_name,
         id_prefix=str(args.id_prefix).strip(),
         start_id=int(args.start_id),

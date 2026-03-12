@@ -1,57 +1,57 @@
 {
-  "dataset": "/Users/lsaetta/Progetti/advanced_rag_agent/eval_data/file09.jsonl",
+  "dataset": "/Users/lsaetta/Progetti/advanced_rag_agent/eval_data/file14.jsonl",
   "model_id_answer": "google.gemini-2.5-pro",
   "model_id_post_answer_eval": "openai.gpt-5.4",
   "results": [
     {
-      "id": "kb_auto_081",
-      "question": "Qual \u00e8 il campo di applicazione previsto per gli impianti domestici alimentati da rete e quali limiti di portata termica degli apparecchi sono considerati?",
+      "id": "kb_auto_131",
+      "question": "Qual \u00e8 l\u2019obiettivo principale del metodo pi\u00f9 comune di difesa dalla corrosione per una struttura metallica interrata?",
       "root_cause": "NO_ISSUE"
     },
     {
-      "id": "kb_auto_082",
-      "question": "Dove deve essere collocato il punto di inizio di un impianto interno e quali requisiti deve avere il dispositivo di intercettazione generale?",
+      "id": "kb_auto_132",
+      "question": "Quali superfici delle strutture metalliche sono coperte dalle prescrizioni sui rivestimenti isolanti: interne, esterne o entrambe?",
       "root_cause": "NO_ISSUE"
     },
     {
-      "id": "kb_auto_083",
-      "question": "Quali valori massimi di perdita di pressione sono ammessi tra contatore e apparecchi di utilizzazione per le diverse famiglie di gas?",
+      "id": "kb_auto_133",
+      "question": "Quali due tipi di elementi non rientrano nell\u2019applicabilit\u00e0 dei criteri indicati per la protezione passiva?",
       "root_cause": "NO_ISSUE"
     },
     {
-      "id": "kb_auto_084",
-      "question": "Quali materiali sono ammessi per la realizzazione della parte fissa dell\u2019impianto interno e quali riferimenti normativi devono rispettare?",
+      "id": "kb_auto_134",
+      "question": "Qual \u00e8 la definizione di \u201crivestimento isolante\u201d in termini di continuit\u00e0, aderenza, spessore e durata di efficienza prevista?",
       "root_cause": "NO_ISSUE"
     },
     {
-      "id": "kb_auto_085",
-      "question": "Quali sono i diametri e gli spessori minimi previsti per i tubi di acciaio non legato a parete sottile?",
+      "id": "kb_auto_135",
+      "question": "Durante la fase di \u201cEsercizio\u201d, quali caratteristiche del rivestimento sono richieste in relazione alla resistenza al distacco catodico e all\u2019impermeabilit\u00e0?",
       "root_cause": "NO_ISSUE"
     },
     {
-      "id": "kb_auto_086",
-      "question": "Quali tipologie di giunzioni sono consentite per i tubi di acciaio negli impianti interni a gas?",
+      "id": "kb_auto_136",
+      "question": "Che cosa indica la \u201cresistenza di isolamento\u201d del rivestimento una volta completata la posa, e a cosa serve per la protezione catodica?",
       "root_cause": "NO_ISSUE"
     },
     {
-      "id": "kb_auto_087",
-      "question": "Quali caratteristiche devono avere i dispositivi di intercettazione installati sulle tubazioni interne?",
-      "root_cause": "GENERATION"
-    },
-    {
-      "id": "kb_auto_088",
-      "question": "Quali sono i requisiti dimensionali previsti per i tubi di rame utilizzati negli impianti interni a gas?",
+      "id": "kb_auto_137",
+      "question": "Perch\u00e9 deve essere verificata la resistenza dei rivestimenti al distacco sotto polarizzazione negativa, e in quali condizioni pu\u00f2 verificarsi la perdita di aderenza?",
       "root_cause": "NO_ISSUE"
     },
     {
-      "id": "kb_auto_089",
-      "question": "In quali casi \u00e8 consentito l\u2019attraversamento di murature o solai da parte delle tubazioni e quali accorgimenti devono essere adottati?",
+      "id": "kb_auto_138",
+      "question": "Quali fattori devono essere valutati, oltre al comportamento alle sollecitazioni, per scegliere un rivestimento isolante?",
       "root_cause": "NO_ISSUE"
     },
     {
-      "id": "kb_auto_090",
-      "question": "Quali tipologie di giunzioni sono ammesse per i tubi di polietilene e quali norme devono essere rispettate?",
-      "root_cause": "GENERATION"
+      "id": "kb_auto_139",
+      "question": "Quali controlli minimi vengono normalmente eseguiti in cantiere per il controllo dei rivestimenti durante l\u2019applicazione?",
+      "root_cause": "NO_ISSUE"
+    },
+    {
+      "id": "kb_auto_140",
+      "question": "Qual \u00e8 l\u2019obiettivo principale della difesa dalla corrosione di una struttura metallica interrata tramite rivestimenti isolanti continui?",
+      "root_cause": "NO_ISSUE"
     }
   ]
 }

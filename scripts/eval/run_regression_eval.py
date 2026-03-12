@@ -235,8 +235,12 @@ def _run_case(
             "enable_reranker": enable_reranker,
             "enable_advanced_analysis": False,
             "advanced_analysis_session_only": False,
-            "advanced_analysis_enable_risk_validation": config.ADVANCED_ANALYSIS_ENABLE_RISK_VALIDATION,
-            "advanced_analysis_risk_validation_kb_top_k": config.ADVANCED_ANALYSIS_RISK_VALIDATION_KB_TOP_K,
+            "advanced_analysis_enable_risk_validation": (
+                config.ADVANCED_ANALYSIS_ENABLE_RISK_VALIDATION
+            ),
+            "advanced_analysis_risk_validation_kb_top_k": (
+                config.ADVANCED_ANALYSIS_RISK_VALIDATION_KB_TOP_K
+            ),
             "enable_tracing": False,
             "main_language": config.MAIN_LANGUAGE,
             "collection_name": collection_name,
@@ -344,7 +348,8 @@ def _run_case(
         print(f"expected_citations={json.dumps(expected_citations, ensure_ascii=True)}")
         print(f"observed_citations={json.dumps(citations, ensure_ascii=True)}")
         print(
-            f"missing_expected_citations={json.dumps(missing_expected_citations, ensure_ascii=True)}"
+            "missing_expected_citations="
+            f"{json.dumps(missing_expected_citations, ensure_ascii=True)}"
         )
 
     return {
@@ -462,8 +467,12 @@ def _print_run_configuration(
         "enable_reranker": not args.disable_reranker,
         "enable_advanced_analysis": False,
         "advanced_analysis_session_only": False,
-        "advanced_analysis_enable_risk_validation": config.ADVANCED_ANALYSIS_ENABLE_RISK_VALIDATION,
-        "advanced_analysis_risk_validation_kb_top_k": config.ADVANCED_ANALYSIS_RISK_VALIDATION_KB_TOP_K,
+        "advanced_analysis_enable_risk_validation": (
+            config.ADVANCED_ANALYSIS_ENABLE_RISK_VALIDATION
+        ),
+        "advanced_analysis_risk_validation_kb_top_k": (
+            config.ADVANCED_ANALYSIS_RISK_VALIDATION_KB_TOP_K
+        ),
         "main_language": config.MAIN_LANGUAGE,
         "session_pdf_max_pages": config.SESSION_PDF_MAX_PAGES,
         "post_answer_evaluation_enabled": not args.disable_post_answer_evaluation,

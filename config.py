@@ -53,8 +53,10 @@ VLM_MODEL_ID = "openai.gpt-5.2"
 TEMPERATURE = 0.0
 # increased to support hybrid search with reranker
 MAX_TOKENS = 8000
+# for Cohere
+# MAX_TOKENS = 4000
 # transient failures (e.g., safety false positives / rate limits)
-LLM_MAX_RETRIES = 2
+LLM_MAX_RETRIES = 3
 
 # max number of pages for in-memory session PDF scan
 SESSION_PDF_MAX_PAGES = 30

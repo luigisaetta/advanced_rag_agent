@@ -44,7 +44,7 @@ def get_authenticated_user(default_user: str = "anonymous") -> str:
         ):
             value = headers.get(key)
             if value:
-                return str(value).split(",")[0].strip()
+                return str(value).split(",", maxsplit=1)[0].strip()
 
         for key, value in headers.items():
             if str(key).lower() in (
@@ -53,7 +53,7 @@ def get_authenticated_user(default_user: str = "anonymous") -> str:
                 "remote-user",
             ):
                 if value:
-                    return str(value).split(",")[0].strip()
+                    return str(value).split(",", maxsplit=1)[0].strip()
 
     return default_user
 
@@ -74,6 +74,8 @@ def init_session_state() -> None:
         )
     if "enable_reranker" not in st.session_state:
         st.session_state.enable_reranker = True
+    if "enable_tracing" not in st.session_state:
+        st.session_state.enable_tracing = config.ENABLE_TRACING
     if "enable_post_answer_evaluation" not in st.session_state:
         st.session_state.enable_post_answer_evaluation = (
             config.POST_ANSWER_EVALUATION_ENABLED
