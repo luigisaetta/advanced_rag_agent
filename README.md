@@ -4,6 +4,7 @@ It now includes an **Advanced Analysis** path for complex questions on documents
 
 **Features added in March 2026**
 - Advanced Analysis subgraph (`Planner -> AdvancedAnalysis -> FinalSynthesis`) for structured multi-step responses
+- Post Answer Evaluation subagent (`PostAnswerEvaluation`) callable standalone and reused by UI/regression flows
 - Conditional routing to Advanced Analysis for `HYBRID` intent when a session PDF is loaded and the UI toggle is enabled
 - Configurable advanced-analysis controls for max actions, per-step KB retrieval, and step output size
 - Centralized **Prompt Profiles** (domain framing) with UI selection in sidebar `Options`
@@ -32,6 +33,9 @@ Use this project as a reference implementation when you need:
 │   ├── rag_agent.py
 │   ├── advanced_analysis.py
 │   ├── advanced_analysis_state.py
+│   ├── post_answer_evaluation_agent.py
+│   ├── post_answer_evaluator.py
+│   ├── post_answer_evaluation_state.py
 │   ├── agent_state.py
 │   ├── intent_classifier.py
 │   ├── query_rewriter.py

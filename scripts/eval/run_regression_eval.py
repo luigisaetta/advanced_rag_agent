@@ -18,13 +18,15 @@ from langchain_core.vectorstores import InMemoryVectorStore
 
 import config
 from agent.agent_state import State
-from agent.post_answer_evaluator import PostAnswerEvaluator
+from agent.post_answer_evaluation_agent import create_post_answer_evaluation_agent
 from agent.rag_agent import create_workflow
+from core.agent_config import build_agent_config
 from core.oci_models import get_embedding_model
 from core.session_pdf_vlm import scan_pdf_to_docs_with_vlm
 from core.utils import docs_serializable
 
 ALLOWED_ROOT_CAUSES = {"NO_ISSUE", "RETRIEVAL", "RERANK", "GENERATION"}
+POST_ANSWER_EVALUATION_AGENT = create_post_answer_evaluation_agent()
 
 
 def _load_jsonl(path: Path) -> List[Dict[str, Any]]:
@@ -229,33 +231,24 @@ def _run_case(
         session_source_name = session_payload["source_name"]
         session_docs = list(session_payload.get("docs", []))
 
-    cfg = {
-        "configurable": {
-            "model_id": model_id,
-            "enable_reranker": enable_reranker,
-            "enable_advanced_analysis": False,
-            "advanced_analysis_session_only": False,
-            "advanced_analysis_enable_risk_validation": (
-                config.ADVANCED_ANALYSIS_ENABLE_RISK_VALIDATION
-            ),
-            "advanced_analysis_risk_validation_kb_top_k": (
-                config.ADVANCED_ANALYSIS_RISK_VALIDATION_KB_TOP_K
-            ),
-            "enable_tracing": False,
-            "main_language": config.MAIN_LANGUAGE,
-            "collection_name": collection_name,
-            "thread_id": f"eval-{case['id']}",
-            "session_pdf_vector_store": session_vs,
-            "session_pdf_chunks_count": session_chunks_count,
-            "session_pdf_docs": session_docs,
-            "advanced_analysis_max_actions": config.ADVANCED_ANALYSIS_MAX_ACTIONS,
-            "advanced_analysis_kb_top_k": config.ADVANCED_ANALYSIS_KB_TOP_K,
-            "advanced_analysis_step_max_words": config.ADVANCED_ANALYSIS_STEP_MAX_WORDS,
-            "post_answer_evaluation_enabled": enable_post_answer_evaluation,
-            "post_answer_evaluation_model_id": post_answer_model_id,
-            "post_answer_evaluation_max_chars": config.POST_ANSWER_EVALUATION_MAX_CHARS,
-        }
-    }
+    cfg = build_agent_config(
+        model_id=model_id,
+        collection_name=collection_name,
+        thread_id=f"eval-{case['id']}",
+        enable_reranker=enable_reranker,
+        enable_advanced_analysis=False,
+        enable_tracing=False,
+        main_language=config.MAIN_LANGUAGE,
+        advanced_analysis_session_only=False,
+        session_pdf_vector_store=session_vs,
+        session_pdf_chunks_count=session_chunks_count,
+        session_pdf_docs=session_docs,
+        advanced_analysis_enable_risk_validation=(
+            config.ADVANCED_ANALYSIS_ENABLE_RISK_VALIDATION
+        ),
+        post_answer_evaluation_enabled=enable_post_answer_evaluation,
+        post_answer_evaluation_model_id=post_answer_model_id,
+    )
 
     events = list(
         app.stream(
@@ -310,7 +303,7 @@ def _run_case(
             final_answer=answer_text,
             error=None,
         )
-        eval_result = PostAnswerEvaluator().invoke(eval_input, config=cfg)
+        eval_result = POST_ANSWER_EVALUATION_AGENT.invoke(eval_input, config=cfg)
         post_answer_root_cause = str(
             eval_result.get("post_answer_root_cause", "")
         ).upper()

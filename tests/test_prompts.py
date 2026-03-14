@@ -4,11 +4,12 @@ Author: Luigi Saetta
 Last modified: 25-02-2026
 Python Version: 3.11
 License: MIT
-Description: Unit tests for prompt templates placeholders used by reformulation, reranking, and answering steps.
+Description: Unit tests for prompt template placeholders used by
+reformulation, reranking, and answering steps.
 """
 
 from langchain_core.prompts import PromptTemplate
-import agent.prompts as prompts
+from agent import prompts
 
 
 def test_reformulate_prompt_has_required_placeholders():

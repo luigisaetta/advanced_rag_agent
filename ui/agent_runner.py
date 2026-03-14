@@ -27,8 +27,9 @@ from py_zipkin import Encoding
 from py_zipkin.zipkin import zipkin_span
 
 import config
-from agent.post_answer_evaluator import PostAnswerEvaluator
+from agent.post_answer_evaluation_agent import create_post_answer_evaluation_agent
 from agent.rag_agent import State
+from core.agent_config import build_agent_config
 from core.transport import http_transport
 from core.utils import redact_agent_config_for_log
 from ui.rendering import render_advanced_plan, render_answer, render_references
@@ -37,43 +38,32 @@ from ui.session import add_to_chat_history, get_chat_history
 _POST_EVAL_EXECUTOR = ThreadPoolExecutor(
     max_workers=2, thread_name_prefix="post-answer-eval"
 )
+_POST_ANSWER_EVALUATION_AGENT = create_post_answer_evaluation_agent()
 
 
 def _build_agent_config(progress_callback):
     """Helper for build agent config."""
-    return {
-        "configurable": {
-            "model_id": st.session_state.model_id,
-            "embed_model_id": config.EMBED_MODEL_ID,
-            "reranker_model_id": config.RERANKER_MODEL_ID,
-            "top_k": config.TOP_K,
-            "enable_reranker": st.session_state.enable_reranker,
-            "enable_advanced_analysis": st.session_state.enable_advanced_analysis,
-            # Default is false. SESSION_DOC sets this at runtime via classifier output.
-            # This key allows explicit script/config control when needed.
-            "advanced_analysis_session_only": False,
-            "enable_tracing": st.session_state.enable_tracing,
-            "main_language": config.MAIN_LANGUAGE,
-            "prompt_profile": st.session_state.prompt_profile,
-            "collection_name": st.session_state.collection_name,
-            "thread_id": st.session_state.thread_id,
-            "session_pdf_vector_store": st.session_state.session_pdf_vector_store,
-            "session_pdf_chunks_count": st.session_state.session_pdf_chunks_count,
-            "session_pdf_docs": st.session_state.session_pdf_docs,
-            "advanced_analysis_max_actions": config.ADVANCED_ANALYSIS_MAX_ACTIONS,
-            "advanced_analysis_kb_top_k": config.ADVANCED_ANALYSIS_KB_TOP_K,
-            "advanced_analysis_step_max_words": config.ADVANCED_ANALYSIS_STEP_MAX_WORDS,
-            # Runtime toggle from UI (default sourced from config).
-            "advanced_analysis_enable_risk_validation": st.session_state.enable_risk_validation,
-            "advanced_analysis_risk_validation_kb_top_k": (
-                config.ADVANCED_ANALYSIS_RISK_VALIDATION_KB_TOP_K
-            ),
-            "post_answer_evaluation_enabled": st.session_state.enable_post_answer_evaluation,
-            "post_answer_evaluation_model_id": config.POST_ANSWER_EVALUATION_MODEL_ID,
-            "post_answer_evaluation_max_chars": config.POST_ANSWER_EVALUATION_MAX_CHARS,
-            "progress_callback": progress_callback,
-        }
-    }
+    return build_agent_config(
+        model_id=st.session_state.model_id,
+        collection_name=st.session_state.collection_name,
+        thread_id=st.session_state.thread_id,
+        enable_reranker=st.session_state.enable_reranker,
+        enable_advanced_analysis=st.session_state.enable_advanced_analysis,
+        enable_tracing=st.session_state.enable_tracing,
+        prompt_profile=st.session_state.prompt_profile,
+        main_language=config.MAIN_LANGUAGE,
+        # Default is false. SESSION_DOC sets this at runtime via classifier output.
+        # This key allows explicit script/config control when needed.
+        advanced_analysis_session_only=False,
+        session_pdf_vector_store=st.session_state.session_pdf_vector_store,
+        session_pdf_chunks_count=st.session_state.session_pdf_chunks_count,
+        session_pdf_docs=st.session_state.session_pdf_docs,
+        # Runtime toggle from UI (default sourced from config).
+        advanced_analysis_enable_risk_validation=st.session_state.enable_risk_validation,
+        post_answer_evaluation_enabled=st.session_state.enable_post_answer_evaluation,
+        post_answer_evaluation_model_id=config.POST_ANSWER_EVALUATION_MODEL_ID,
+        progress_callback=progress_callback,
+    )
 
 
 def _has_hybrid_db_signal(docs: list) -> bool:
@@ -126,7 +116,7 @@ def _run_post_answer_evaluation_if_needed(
     def _background_eval():
         """Run post-answer evaluator in a background worker."""
         try:
-            PostAnswerEvaluator().invoke(eval_input, config=eval_config)
+            _POST_ANSWER_EVALUATION_AGENT.invoke(eval_input, config=eval_config)
         except Exception as exc:
             logger.warning("Post-answer evaluation async failed: %s", exc)
 

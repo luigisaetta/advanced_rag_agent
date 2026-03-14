@@ -10,7 +10,9 @@ import core.retry_utils as retry_module
 def test_is_retryable_llm_exception_detects_markers():
     """Known transient markers should be classified as retryable."""
     assert retry_module.is_retryable_llm_exception(Exception("429 too many requests"))
-    assert retry_module.is_retryable_llm_exception(Exception("Content filter triggered"))
+    assert retry_module.is_retryable_llm_exception(
+        Exception("Content filter triggered")
+    )
     assert not retry_module.is_retryable_llm_exception(Exception("syntax error"))
 
 
@@ -29,7 +31,7 @@ def test_run_with_retry_retries_then_succeeds(monkeypatch):
     attempts = {"n": 0}
     sleeps = []
     monkeypatch.setattr(retry_module.random, "uniform", lambda _a, _b: 0.0)
-    monkeypatch.setattr(retry_module.time, "sleep", lambda seconds: sleeps.append(seconds))
+    monkeypatch.setattr(retry_module.time, "sleep", sleeps.append)
 
     def _operation():
         attempts["n"] += 1
@@ -51,7 +53,7 @@ def test_run_with_retry_retries_then_succeeds(monkeypatch):
 def test_run_with_retry_raises_non_retryable_without_sleep(monkeypatch):
     """Non-retryable failures should be raised immediately."""
     sleeps = []
-    monkeypatch.setattr(retry_module.time, "sleep", lambda seconds: sleeps.append(seconds))
+    monkeypatch.setattr(retry_module.time, "sleep", sleeps.append)
 
     with pytest.raises(RuntimeError, match="bad input"):
         retry_module.run_with_retry(
@@ -60,7 +62,7 @@ def test_run_with_retry_raises_non_retryable_without_sleep(monkeypatch):
             operation_name="op",
         )
 
-    assert sleeps == []
+    assert not sleeps
 
 
 def test_run_with_retry_raises_after_max_attempts(monkeypatch):
@@ -98,7 +100,7 @@ def test_stream_with_retry_retries_before_first_chunk(monkeypatch):
     attempts = {"n": 0}
     sleeps = []
     monkeypatch.setattr(retry_module.random, "uniform", lambda _a, _b: 0.0)
-    monkeypatch.setattr(retry_module.time, "sleep", lambda seconds: sleeps.append(seconds))
+    monkeypatch.setattr(retry_module.time, "sleep", sleeps.append)
 
     def _factory():
         attempts["n"] += 1
@@ -124,7 +126,7 @@ def test_stream_with_retry_does_not_retry_after_partial_emit(monkeypatch):
     """If a chunk was already emitted, exception must propagate directly."""
     attempts = {"n": 0}
     sleeps = []
-    monkeypatch.setattr(retry_module.time, "sleep", lambda seconds: sleeps.append(seconds))
+    monkeypatch.setattr(retry_module.time, "sleep", sleeps.append)
 
     def _factory():
         attempts["n"] += 1
@@ -141,7 +143,7 @@ def test_stream_with_retry_does_not_retry_after_partial_emit(monkeypatch):
         next(gen)
 
     assert attempts["n"] == 1
-    assert sleeps == []
+    assert not sleeps
 
 
 def test_stream_with_retry_rejects_invalid_max_attempts():

@@ -18,6 +18,8 @@ It also stores the result in Oracle for later analysis.
 ## Where It Is Implemented
 
 - Evaluator logic: `agent/post_answer_evaluator.py`
+- Dedicated state: `agent/post_answer_evaluation_state.py`
+- Callable subagent wrapper: `agent/post_answer_evaluation_agent.py`
 - Evaluation prompt: `agent/prompts.py` (`POST_ANSWER_EVALUATION_TEMPLATE`)
 - UI trigger path: `ui/agent_runner.py`
 - Oracle persistence: `core/post_answer_feedback.py`
@@ -51,6 +53,12 @@ The evaluator receives:
 - retrieved docs before rerank (`retriever_docs`)
 - docs after rerank (`reranker_docs`)
 - final answer text (`final_answer`)
+
+Evaluation execution is delegated to a dedicated LangGraph subagent:
+
+`START -> PostAnswerEvaluation -> END`
+
+The same subagent is used in both UI async execution and standalone script usage.
 
 ### 4) Prompt construction
 
@@ -154,6 +162,28 @@ The feature is designed to be non-blocking:
 
 Therefore, user-facing answer generation remains unaffected.
 
+## Callable Usage From Python
+
+Post Answer Evaluation can be executed directly from Python:
+
+```python
+from agent.post_answer_evaluation_agent import create_post_answer_evaluation_agent
+
+post_eval = create_post_answer_evaluation_agent()
+result = post_eval.invoke(
+    {
+        "user_request": "question",
+        "standalone_question": "question",
+        "retriever_docs": [...],
+        "reranker_docs": [...],
+        "final_answer": "answer text",
+        "citations": [...],
+        "error": None,
+    },
+    config={"configurable": {"post_answer_evaluation_enabled": True}},
+)
+```
+
 ## Known Limitations
 
 1. **Cost/latency growth**
@@ -195,4 +225,3 @@ SELECT
 FROM post_answer_evaluation
 ORDER BY id DESC;
 ```
-

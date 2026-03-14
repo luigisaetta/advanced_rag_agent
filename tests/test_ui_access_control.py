@@ -23,12 +23,15 @@ class _FakeStreamlit:
         self.stop_calls = 0
 
     def markdown(self, text, unsafe_allow_html=False):
+        """Record markdown calls for assertions."""
         self.markdown_calls.append((text, unsafe_allow_html))
 
     def error(self, text):
+        """Record error calls for assertions."""
         self.error_calls.append(text)
 
     def stop(self):
+        """Mimic Streamlit's stop by raising a sentinel RuntimeError."""
         self.stop_calls += 1
         raise RuntimeError("st.stop")
 
@@ -36,7 +39,7 @@ class _FakeStreamlit:
 def test_resolve_session_user_profile_caches_until_user_changes(monkeypatch):
     """Profile is cached and refreshed only when username changes."""
     fake_st = _FakeStreamlit()
-    fake_st.session_state.authenticated_user = "ALICE"
+    fake_st.session_state["authenticated_user"] = "ALICE"
 
     calls = []
     monkeypatch.setattr(access_module, "st", fake_st)
@@ -46,15 +49,22 @@ def test_resolve_session_user_profile_caches_until_user_changes(monkeypatch):
     monkeypatch.setattr(
         access_module,
         "get_user_profile",
-        lambda username: calls.append(username) or ("ADMIN" if username == "alice" else "USER"),
+        lambda username: calls.append(username)
+        or ("ADMIN" if username == "alice" else "USER"),
     )
 
-    assert access_module._resolve_session_user_profile() == "ADMIN"
-    assert access_module._resolve_session_user_profile() == "ADMIN"
+    assert (
+        access_module._resolve_session_user_profile() == "ADMIN"
+    )  # pylint: disable=protected-access
+    assert (
+        access_module._resolve_session_user_profile() == "ADMIN"
+    )  # pylint: disable=protected-access
     assert calls == ["alice"]
 
-    fake_st.session_state.authenticated_user = "BOB"
-    assert access_module._resolve_session_user_profile() == "USER"
+    fake_st.session_state["authenticated_user"] = "BOB"
+    assert (
+        access_module._resolve_session_user_profile() == "USER"
+    )  # pylint: disable=protected-access
     assert calls == ["alice", "bob"]
 
 

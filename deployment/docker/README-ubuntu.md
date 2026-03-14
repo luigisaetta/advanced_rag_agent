@@ -36,42 +36,59 @@ sudo usermod -aG docker $USER
 newgrp docker
 ```
 
-## 2) Clone project and prepare files
+## 2) Clone project and single-file setup
 
 ```bash
 git clone <YOUR_REPO_URL> advanced_rag_agent
 cd advanced_rag_agent
 ```
 
-Create private config:
+Create a single setup file:
 
 ```bash
-cp config_private_template.py config_private.py
+cp deployment/docker/setup.env.example deployment/docker/setup.env
 ```
 
-Then edit `config_private.py` with your DB credentials and DSN.
+Edit only:
 
-Also verify `config.py` public runtime settings:
-1. `LLM_REGION` / `LLM_SERVICE_ENDPOINT`
-2. `EMBED_REGION` / `EMBED_SERVICE_ENDPOINT`
+```text
+deployment/docker/setup.env
+```
 
-## 3) Update host paths in compose for Ubuntu
+Then run the configurator in dry-run mode:
 
-The current compose file contains host paths from macOS.  
-Before starting on Ubuntu, update these mounts in [docker-compose.yml](./docker-compose.yml):
+```bash
+python3 deployment/docker/configure.py --env-file deployment/docker/setup.env
+```
 
-1. Wallet path:
-   - from: `/Users/lsaetta/Progetti/work-iren/wallet`
-   - to: your Ubuntu absolute path (example: `/home/ubuntu/work-iren/wallet`)
-2. Citation images root:
-   - from: `/Users/lsaetta/Progetti/work-iren/pages`
-   - to: your Ubuntu absolute path (example: `/home/ubuntu/work-iren/pages`)
+Apply changes:
 
-Keep these mounts unchanged:
-1. `../../config_private.py:/app/config_private.py:ro`
-2. `${HOME}/.oci:/root/.oci:ro`
+```bash
+python3 deployment/docker/configure.py --env-file deployment/docker/setup.env --write
+```
 
-## 4) OCI configuration on Ubuntu host
+The script updates:
+1. `config.py`
+2. `config_private.py`
+3. `deployment/docker/docker-compose.yml`
+
+Useful options:
+
+```bash
+# show all options
+python3 deployment/docker/configure.py --help
+
+# update only specific targets
+python3 deployment/docker/configure.py --env-file deployment/docker/setup.env --targets config private --write
+
+# skip path existence checks
+python3 deployment/docker/configure.py --env-file deployment/docker/setup.env --write --no-validate-paths
+
+# write without backups
+python3 deployment/docker/configure.py --env-file deployment/docker/setup.env --write --no-backup
+```
+
+## 3) Verify OCI configuration on Ubuntu host
 
 Ensure OCI files are available on host:
 
@@ -85,7 +102,7 @@ In `${HOME}/.oci/config`, verify:
 2. `key_file` points to a file inside `${HOME}/.oci`
 3. tenancy, user, fingerprint, region are valid
 
-## 5) Prepare citation directory structure
+## 4) Prepare citation directory structure
 
 Expected structure:
 
@@ -99,7 +116,7 @@ Example:
 /home/ubuntu/work-iren/pages/MyDoc/page0007.png
 ```
 
-## 6) Configure Basic Auth users (Nginx)
+## 5) Configure Basic Auth users (Nginx)
 
 Create password file on host:
 
@@ -122,7 +139,7 @@ docker run --rm --entrypoint htpasswd httpd:2.4-alpine -Bbn user1 'password1' > 
 docker run --rm --entrypoint htpasswd httpd:2.4-alpine -Bbn user2 'password2' >> deployment/docker/nginx/.htpasswd
 ```
 
-## 7) Build and start
+## 6) Build and start
 
 From project root:
 
@@ -130,7 +147,7 @@ From project root:
 docker compose -f deployment/docker/docker-compose.yml up -d --build
 ```
 
-## 8) Bootstrap user profiles in Oracle
+## 7) Bootstrap user profiles in Oracle
 
 Before validating role-based access in UI, create/seed `USER_PROFILE`:
 
@@ -179,26 +196,24 @@ docker compose -f deployment/docker/docker-compose.yml logs -f bm25_mcp_server
 
 Expected log lines include `BM25 MCP startup` and prewarm status.
 
-## 9) Network and firewall
+## 8) Network and firewall
 
 By default:
 1. UI is exposed through Nginx on `8501/tcp`
-2. Citation server is exposed on `8008/tcp` (if kept enabled in compose)
-3. BM25 MCP server is exposed on `8010/tcp` (if kept enabled in compose)
+2. BM25 MCP server is exposed on `8010/tcp` (if kept enabled in compose)
+3. Citation server is internal-only and is proxied by Nginx under `/citations/`
 
 If using firewall:
 
 ```bash
 sudo iptables -I INPUT -p tcp -s 0.0.0.0/0 --dport 8501 -j ACCEPT
-sudo iptables -I INPUT -p tcp -s 0.0.0.0/0 --dport 8008 -j ACCEPT
 sudo iptables -I INPUT -p tcp -s 0.0.0.0/0 --dport 8010 -j ACCEPT
 sudo service netfilter-persistent save
 ```
 
-If you want citation server private, remove its `ports:` mapping from compose and keep only internal access.
 If you want MCP server private, remove its `ports:` mapping from compose and keep only internal access.
 
-## 10) Validation checklist
+## 9) Validation checklist
 
 1. Open `http://<UBUNTU_HOST_IP>:8501`
 2. Nginx prompts for username/password
@@ -208,7 +223,7 @@ If you want MCP server private, remove its `ports:` mapping from compose and kee
 6. Citation image links open correctly
 7. `docker compose ... ps` shows all services as `Up`
 
-## 11) Common issues
+## 10) Common issues
 
 1. `.htpasswd is a directory`
    - fix:

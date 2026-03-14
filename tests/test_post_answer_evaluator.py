@@ -129,9 +129,7 @@ def test_post_answer_evaluator_normalizes_invalid_fields(monkeypatch):
     node = PostAnswerEvaluator()
     feedback_calls = []
 
-    monkeypatch.setattr(
-        pae_module, "get_llm", lambda **_kwargs: _FakeLlm("unused raw")
-    )
+    monkeypatch.setattr(pae_module, "get_llm", lambda **_kwargs: _FakeLlm("unused raw"))
     monkeypatch.setattr(
         pae_module,
         "extract_json_from_text",

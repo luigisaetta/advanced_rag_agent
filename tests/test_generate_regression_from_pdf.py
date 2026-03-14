@@ -2,6 +2,8 @@
 Unit tests for regression dataset generation helpers.
 """
 
+# pylint: disable=protected-access
+
 from scripts.eval import generate_regression_from_pdf as gen
 
 
@@ -58,8 +60,13 @@ def test_generate_questions_filters_invalid_pages_and_duplicates(monkeypatch):
         def __init__(self, content):
             self.content = content
 
+        def text(self):
+            """Return response content for test assertions/debugging."""
+            return self.content
+
     class _FakeLLM:
         def invoke(self, _messages):
+            """Return a deterministic fake LLM response payload."""
             return _FakeResponse(
                 '{"questions":['
                 '{"question":"What is the payment term?","chunk_number":"1"},'
@@ -69,6 +76,10 @@ def test_generate_questions_filters_invalid_pages_and_duplicates(monkeypatch):
                 '{"question":"What is in scope?","chunk_number":"9"}'
                 "]}"
             )
+
+        def model_name(self):
+            """Expose a model identifier like a real client might."""
+            return "fake-model"
 
     monkeypatch.setattr(gen, "get_llm", lambda model_id, temperature: _FakeLLM())
     monkeypatch.setattr(gen, "run_with_retry", lambda func, **kwargs: func())

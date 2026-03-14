@@ -2,48 +2,51 @@
 Unit tests for ui.agent_runner helpers.
 """
 
+# pylint: disable=protected-access
+
+from types import SimpleNamespace
+
 import ui.agent_runner as runner_module
 
 
-class _SessionState(dict):
-    def __getattr__(self, name):
-        return self.get(name)
-
-    def __setattr__(self, name, value):
-        self[name] = value
-
-
-class _FakeStreamlit:
-    def __init__(self):
-        self.session_state = _SessionState()
-
-
 class _FakeLogger:
+    """Collect warnings emitted by helper functions under test."""
+
     def __init__(self):
         self.warnings = []
 
     def warning(self, msg, *args):
+        """Store warning log invocations for assertions."""
         self.warnings.append((msg, args))
+
+    def info(self, msg, *args):
+        """No-op info logger for API compatibility."""
+        _ = (msg, args)
 
 
 def test_build_agent_config_reads_session_and_runtime_flags(monkeypatch):
     """Config builder should map streamlit session values into configurable payload."""
-    fake_st = _FakeStreamlit()
-    fake_st.session_state.model_id = "model-x"
-    fake_st.session_state.enable_reranker = True
-    fake_st.session_state.enable_advanced_analysis = True
-    fake_st.session_state.enable_tracing = False
-    fake_st.session_state.prompt_profile = "default"
-    fake_st.session_state.collection_name = "COLL01"
-    fake_st.session_state.thread_id = "thread-1"
-    fake_st.session_state.session_pdf_vector_store = "vs"
-    fake_st.session_state.session_pdf_chunks_count = 9
-    fake_st.session_state.session_pdf_docs = [{"page_content": "x"}]
-    fake_st.session_state.enable_risk_validation = True
-    fake_st.session_state.enable_post_answer_evaluation = False
+    fake_st = SimpleNamespace(
+        session_state=SimpleNamespace(
+            model_id="model-x",
+            enable_reranker=True,
+            enable_advanced_analysis=True,
+            enable_tracing=False,
+            prompt_profile="default",
+            collection_name="COLL01",
+            thread_id="thread-1",
+            session_pdf_vector_store="vs",
+            session_pdf_chunks_count=9,
+            session_pdf_docs=[{"page_content": "x"}],
+            enable_risk_validation=True,
+            enable_post_answer_evaluation=False,
+        )
+    )
     monkeypatch.setattr(runner_module, "st", fake_st)
 
-    callback = lambda *_args: None
+    def callback(*_args):
+        """No-op callback used to verify reference passthrough."""
+
     cfg = runner_module._build_agent_config(callback)["configurable"]
 
     assert cfg["model_id"] == "model-x"
@@ -59,15 +62,22 @@ def test_build_agent_config_reads_session_and_runtime_flags(monkeypatch):
 
 def test_has_hybrid_db_signal_detects_bm25_and_semantic_bm25():
     """Hybrid signal is true when retrieval_type contains bm25 provenance."""
-    assert runner_module._has_hybrid_db_signal(
-        [{"metadata": {"retrieval_type": "semantic"}}]
-    ) is False
-    assert runner_module._has_hybrid_db_signal(
-        [{"metadata": {"retrieval_type": "bm25"}}]
-    ) is True
-    assert runner_module._has_hybrid_db_signal(
-        [{"metadata": {"retrieval_type": "semantic+bm25"}}]
-    ) is True
+    assert (
+        runner_module._has_hybrid_db_signal(
+            [{"metadata": {"retrieval_type": "semantic"}}]
+        )
+        is False
+    )
+    assert (
+        runner_module._has_hybrid_db_signal([{"metadata": {"retrieval_type": "bm25"}}])
+        is True
+    )
+    assert (
+        runner_module._has_hybrid_db_signal(
+            [{"metadata": {"retrieval_type": "semantic+bm25"}}]
+        )
+        is True
+    )
 
 
 def test_run_post_answer_evaluation_submits_when_hybrid_db_context_present(monkeypatch):
@@ -77,18 +87,28 @@ def test_run_post_answer_evaluation_submits_when_hybrid_db_context_present(monke
 
     class _FakeEvaluator:
         def invoke(self, input_state, config=None):  # noqa: A002
+            """Validate post-eval payload and count invocations."""
             calls["invoke"] += 1
             assert input_state["standalone_question"] == "rewritten question"
             assert input_state["final_answer"] == "final answer"
             assert config["configurable"]["post_answer_evaluation_enabled"] is True
 
+        def name(self):
+            """Return fake evaluator name for diagnostics."""
+            return "fake-evaluator"
+
     class _FakeExecutor:
         def submit(self, fn):
+            """Execute submitted function inline for deterministic tests."""
             calls["submit"] += 1
             fn()
-            return None
 
-    monkeypatch.setattr(runner_module, "PostAnswerEvaluator", _FakeEvaluator)
+        def shutdown(self):
+            """No-op shutdown hook for API compatibility."""
+
+    monkeypatch.setattr(
+        runner_module, "_POST_ANSWER_EVALUATION_AGENT", _FakeEvaluator()
+    )
     monkeypatch.setattr(runner_module, "_POST_EVAL_EXECUTOR", _FakeExecutor())
 
     by_step = {
@@ -124,8 +144,11 @@ def test_run_post_answer_evaluation_skips_for_session_pdf(monkeypatch):
 
     class _FakeExecutor:
         def submit(self, _fn):
+            """Track submit attempts without executing function."""
             calls["submit"] += 1
-            return None
+
+        def shutdown(self):
+            """No-op shutdown hook for API compatibility."""
 
     monkeypatch.setattr(runner_module, "_POST_EVAL_EXECUTOR", _FakeExecutor())
 
