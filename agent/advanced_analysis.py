@@ -23,7 +23,7 @@ from langchain_core.runnables import Runnable
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import PromptTemplate
 import oracledb
-from core.observability import zipkin_span
+from core.observability import langfuse_span
 
 from agent.advanced_analysis_state import AdvancedAnalysisState
 from agent.prompts import (
@@ -425,7 +425,7 @@ class AdvancedPlanner(Runnable):
             )
         return out
 
-    @zipkin_span(service_name=AGENT_NAME, span_name="advanced_planner")
+    @langfuse_span(service_name=AGENT_NAME, span_name="advanced_planner")
     def invoke(self, input: AdvancedAnalysisState, config=None, **kwargs):
         """Invoke."""
         error = input.get("error")
@@ -781,7 +781,7 @@ class AdvancedAnalysisRunner(Runnable):
             seen.add(content)
         return merged
 
-    @zipkin_span(service_name=AGENT_NAME, span_name="advanced_analysis_execution")
+    @langfuse_span(service_name=AGENT_NAME, span_name="advanced_analysis_execution")
     def invoke(self, input: AdvancedAnalysisState, config=None, **kwargs):
         """Invoke."""
         error = input.get("error")
@@ -992,7 +992,7 @@ class AdvancedFinalSynthesis(Runnable):
     - final synthesis section
     """
 
-    @zipkin_span(service_name=AGENT_NAME, span_name="advanced_final_synthesis")
+    @langfuse_span(service_name=AGENT_NAME, span_name="advanced_final_synthesis")
     def invoke(self, input: AdvancedAnalysisState, config=None, **kwargs):
         """Invoke."""
         error = input.get("error")
@@ -1131,7 +1131,7 @@ class RiskValidator(Runnable):
             )
         return citations
 
-    @zipkin_span(service_name=AGENT_NAME, span_name="advanced_risk_validation")
+    @langfuse_span(service_name=AGENT_NAME, span_name="advanced_risk_validation")
     def invoke(self, input: AdvancedAnalysisState, config=None, **kwargs):
         """
         Validate critical negative findings and append a validation section.

@@ -21,7 +21,7 @@ from langchain_core.runnables import Runnable
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import PromptTemplate
 
-from core.observability import annotate_current_observation, zipkin_span
+from core.observability import annotate_current_observation, langfuse_span
 
 from agent.agent_state import State
 from agent.prompts import HYBRID_KB_QUERY_TEMPLATE, apply_prompt_profile
@@ -60,7 +60,7 @@ class HybridQueryBuilder(Runnable):
             used += len(block)
         return "\n\n".join(snippets)
 
-    @zipkin_span(service_name=AGENT_NAME, span_name="hybrid_query_builder")
+    @langfuse_span(service_name=AGENT_NAME, span_name="hybrid_query_builder")
     def invoke(self, input: State, config=None, **kwargs):
         """Invoke."""
         intent = (input.get("search_intent") or "GLOBAL_KB").upper()

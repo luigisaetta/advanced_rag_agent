@@ -26,7 +26,7 @@ Warnings:
 from langchain_core.runnables import Runnable
 
 # observability decorators
-from core.observability import annotate_current_observation, zipkin_span
+from core.observability import annotate_current_observation, langfuse_span
 
 from agent.agent_state import State
 from core.utils import get_console_logger
@@ -47,7 +47,7 @@ class ContentModerator(Runnable):
         Init
         """
 
-    @zipkin_span(service_name=AGENT_NAME, span_name="content_moderation")
+    @langfuse_span(service_name=AGENT_NAME, span_name="content_moderation")
     def invoke(self, input: State, config=None, **kwargs):
         """
         Check if the user requst is allowed

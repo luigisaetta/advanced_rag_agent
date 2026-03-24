@@ -29,7 +29,7 @@ import oracledb
 from langchain_core.runnables import Runnable
 
 # observability decorators
-from core.observability import annotate_current_observation, zipkin_span
+from core.observability import annotate_current_observation, langfuse_span
 
 from agent.agent_state import State
 from core.oci_models import get_embedding_model, get_oracle_vs
@@ -58,7 +58,7 @@ class SemanticSearch(Runnable):
         """
         return oracledb.connect(**CONNECT_ARGS)
 
-    @zipkin_span(service_name=AGENT_NAME, span_name="similarity_search")
+    @langfuse_span(service_name=AGENT_NAME, span_name="similarity_search")
     def invoke(self, input: State, config=None, **kwargs):
         """
         This method invokes the vector search

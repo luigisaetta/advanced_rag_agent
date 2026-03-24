@@ -230,3 +230,4 @@ See [LICENSE](./LICENSE)
   - profile catalog in `prompt_profiles.py`;
   - runtime selection in sidebar `Options` (`Prompt profile`);
   - automatic prompt injection across classifier, query builder, reranker, answer generation, and advanced-analysis prompts.
+- Added Langfuse observability integration for end-to-end tracing (main RAG flow + post-answer evaluation).

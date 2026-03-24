@@ -13,7 +13,7 @@ from langchain_core.messages import HumanMessage
 from langchain_core.prompts import PromptTemplate
 
 # observability decorators
-from core.observability import annotate_current_observation, zipkin_span
+from core.observability import annotate_current_observation, langfuse_span
 
 from agent.agent_state import State
 from agent.prompts import INTENT_CLASSIFIER_TEMPLATE, apply_prompt_profile
@@ -53,7 +53,7 @@ class IntentClassifier(Runnable):
             return "GLOBAL_KB"
         return intent
 
-    @zipkin_span(service_name=AGENT_NAME, span_name="intent_classifier")
+    @langfuse_span(service_name=AGENT_NAME, span_name="intent_classifier")
     def invoke(self, input: State, config=None, **kwargs):
         """
         Classify request intent.

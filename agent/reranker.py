@@ -31,7 +31,7 @@ from langchain_core.messages import HumanMessage
 from langchain_core.prompts import PromptTemplate
 
 # observability decorators
-from core.observability import annotate_current_observation, zipkin_span
+from core.observability import annotate_current_observation, langfuse_span
 
 from agent.agent_state import State
 from agent.prompts import (
@@ -190,7 +190,7 @@ class Reranker(Runnable):
 
         return [retriever_docs[i] for i in valid_indexes[:TOP_K]]
 
-    @zipkin_span(service_name=AGENT_NAME, span_name="reranking")
+    @langfuse_span(service_name=AGENT_NAME, span_name="reranking")
     def invoke(self, input: State, config=None, **kwargs):
         """
         Implements reranking logic.

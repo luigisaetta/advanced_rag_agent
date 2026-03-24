@@ -29,7 +29,7 @@ from langchain_core.messages import HumanMessage
 from langchain_core.prompts import PromptTemplate
 
 # observability decorators
-from core.observability import annotate_current_observation, zipkin_span
+from core.observability import annotate_current_observation, langfuse_span
 
 from agent.agent_state import State
 from agent.prompts import REFORMULATE_PROMPT_TEMPLATE, apply_prompt_profile
@@ -51,7 +51,7 @@ class QueryRewriter(Runnable):
         Init
         """
 
-    @zipkin_span(service_name=AGENT_NAME, span_name="query_rewriting")
+    @langfuse_span(service_name=AGENT_NAME, span_name="query_rewriting")
     def invoke(self, input: State, config=None, **kwargs):
         """
         Rewrite the query

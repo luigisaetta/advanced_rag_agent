@@ -26,7 +26,8 @@ from langchain_core.messages import AIMessage, HumanMessage
 from core.observability import (
     annotate_current_observation,
     flush_observability,
-    zipkin_span,
+    rename_current_observation,
+    langfuse_span,
 )
 
 import config
@@ -168,7 +169,7 @@ def handle_question(question: str, logger) -> None:
 
         tracing_enabled = bool(agent_config["configurable"].get("enable_tracing", True))
         tracing_context = (
-            zipkin_span(service_name=config.AGENT_NAME, span_name="stream")
+            langfuse_span(service_name=config.AGENT_NAME, span_name="rag_request")
             if tracing_enabled
             else nullcontext()
         )
@@ -199,6 +200,9 @@ def handle_question(question: str, logger) -> None:
                         st.sidebar.header("Standalone question:")
                         st.sidebar.write(value["standalone_question"])
                     if key == "IntentClassifier":
+                        intent_name = str(value.get("search_intent", "") or "").lower()
+                        if intent_name:
+                            rename_current_observation(f"rag_{intent_name}")
                         logger.info(
                             "Intent decision: %s (has_session_pdf=%s)",
                             value.get("search_intent"),

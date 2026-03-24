@@ -1,8 +1,7 @@
 """
 Langfuse observability adapter.
 
-This module replaces the previous py-zipkin integration while keeping a
-compatible `zipkin_span(...)` API for existing decorators.
+This module centralizes Langfuse tracing/observability helpers.
 """
 
 from __future__ import annotations
@@ -42,12 +41,6 @@ except Exception:  # pragma: no cover - package may not be installed in all envs
     except Exception:
         _LANGFUSE_AVAILABLE = False
         _LANGFUSE_USE_DECORATORS = False
-
-
-class Encoding:
-    """Compatibility shim for old py-zipkin imports."""
-
-    V2_JSON = "v2_json"
 
 
 def _is_enabled() -> bool:
@@ -127,6 +120,27 @@ def annotate_current_observation(
         return
 
 
+def rename_current_observation(name: str) -> None:
+    """Rename the active Langfuse observation/span when available."""
+    if not name or not (_LANGFUSE_AVAILABLE and _is_enabled() and _is_configured()):
+        return
+    try:
+        if _LANGFUSE_USE_DECORATORS and langfuse_context is not None:
+            langfuse_context.update_current_observation(name=name)
+            return
+
+        client = _get_client()
+        if client is not None:
+            try:
+                if not client.get_current_observation_id():
+                    return
+            except Exception:
+                return
+            client.update_current_span(name=name)
+    except Exception:
+        return
+
+
 def flush_observability() -> None:
     """Force flush buffered observability events to Langfuse."""
     if not (_LANGFUSE_AVAILABLE and _is_enabled() and _is_configured()):
@@ -139,7 +153,7 @@ def flush_observability() -> None:
         return
 
 
-def zipkin_span(
+def langfuse_span(
     *,
     service_name: str,
     span_name: str,
@@ -148,9 +162,9 @@ def zipkin_span(
     sample_rate: float = 100,
 ) -> Any:
     """
-    Backward-compatible span decorator/context manager.
+    Langfuse span decorator/context manager.
 
-    The old zipkin-only params are accepted for compatibility and ignored.
+    Legacy params are accepted for backward compatibility and ignored.
     """
     del transport_handler, encoding, sample_rate
 

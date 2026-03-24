@@ -13,7 +13,7 @@ import itertools
 from langchain_core.runnables import Runnable
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import PromptTemplate
-from core.observability import annotate_current_observation, zipkin_span
+from core.observability import annotate_current_observation, langfuse_span
 
 from agent.agent_state import State
 from agent.prompts import POST_ANSWER_EVALUATION_TEMPLATE, apply_prompt_profile
@@ -130,7 +130,7 @@ class PostAnswerEvaluator(Runnable):
 
         return answer_payload, str(answer_payload).strip()
 
-    @zipkin_span(service_name=AGENT_NAME, span_name="post_answer_evaluation")
+    @langfuse_span(service_name=AGENT_NAME, span_name="post_answer_evaluation")
     def invoke(self, input: State, config=None, **kwargs):
         """
         Evaluate final answer and log a root-cause class.

@@ -30,7 +30,7 @@ from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.prompts import PromptTemplate
 
 # observability decorators
-from core.observability import annotate_current_observation, zipkin_span
+from core.observability import annotate_current_observation, langfuse_span
 
 from agent.agent_state import State
 from agent.prompts import (
@@ -84,7 +84,7 @@ class AnswerGenerator(Runnable):
             return GEMINI_ANSWER_PROMPT_TEMPLATE
         return ANSWER_PROMPT_TEMPLATE
 
-    @zipkin_span(service_name=AGENT_NAME, span_name="answer_generation")
+    @langfuse_span(service_name=AGENT_NAME, span_name="answer_generation")
     def invoke(self, input: State, config=None, **kwargs):
         """
         Generate the final answer
