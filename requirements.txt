@@ -66,7 +66,7 @@ langchain-openai==1.1.7
 langchain-oracledb==1.2.0
 langchain-text-splitters==1.1.0
 langchain-unstructured==1.0.1
-langgraph==1.0.9
+langgraph==1.0.10
 langgraph-checkpoint==4.0.0
 langgraph-prebuilt==1.0.8
 langgraph-sdk==0.3.3
@@ -124,8 +124,7 @@ pyobjc-framework-CoreML==12.1
 pyobjc-framework-Quartz==12.1
 pyobjc-framework-Vision==12.1
 pyOpenSSL==25.1.0
-pypdf==6.6.0
-PyPDF2==3.0.1
+pypdf==6.8.0
 pypdfium2==5.5.0
 pytest==9.0.2
 python-dateutil==2.9.0.post0
