@@ -21,7 +21,7 @@ from langchain_core.runnables import Runnable
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import PromptTemplate
 
-from py_zipkin.zipkin import zipkin_span
+from core.observability import annotate_current_observation, zipkin_span
 
 from agent.agent_state import State
 from agent.prompts import HYBRID_KB_QUERY_TEMPLATE, apply_prompt_profile
@@ -69,6 +69,9 @@ class HybridQueryBuilder(Runnable):
         kb_query = standalone_question
 
         if intent != "HYBRID":
+            annotate_current_observation(
+                metadata={"intent": intent, "hybrid_query_built": False}
+            )
             return {"kb_query": kb_query, "error": error}
 
         configurable = (config or {}).get("configurable", {})
@@ -76,6 +79,13 @@ class HybridQueryBuilder(Runnable):
         model_id = configurable.get("model_id")
 
         if session_vs is None or not standalone_question:
+            annotate_current_observation(
+                metadata={
+                    "intent": intent,
+                    "hybrid_query_built": False,
+                    "reason": "missing_session_store_or_question",
+                }
+            )
             return {"kb_query": kb_query, "error": error}
 
         try:
@@ -88,6 +98,13 @@ class HybridQueryBuilder(Runnable):
                 max_chars=HYBRID_QUERY_EXPANSION_MAX_CHARS,
             )
             if not session_snippets:
+                annotate_current_observation(
+                    metadata={
+                        "intent": intent,
+                        "hybrid_query_built": False,
+                        "reason": "no_session_snippets",
+                    }
+                )
                 return {"kb_query": kb_query, "error": error}
 
             llm = get_llm(model_id=model_id, temperature=0.0)
@@ -115,10 +132,28 @@ class HybridQueryBuilder(Runnable):
                 len(kb_query),
                 len(session_docs),
             )
+            annotate_current_observation(
+                metadata={
+                    "intent": intent,
+                    "hybrid_query_built": True,
+                    "session_docs_used": len(session_docs),
+                },
+                input_data={"standalone_question_len": len(standalone_question)},
+                output_data={"kb_query_len": len(kb_query)},
+            )
         except Exception as exc:
             logger.warning(
                 "HybridQueryBuilder failed, fallback to standalone question: %s",
                 exc,
+            )
+            annotate_current_observation(
+                metadata={
+                    "intent": intent,
+                    "hybrid_query_built": False,
+                    "error": str(exc),
+                },
+                level="ERROR",
+                status_message=str(exc),
             )
 
         return {"kb_query": kb_query, "error": error}

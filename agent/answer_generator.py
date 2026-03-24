@@ -29,8 +29,8 @@ from langchain_core.runnables import Runnable
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.prompts import PromptTemplate
 
-# integration with APM
-from py_zipkin.zipkin import zipkin_span
+# observability decorators
+from core.observability import annotate_current_observation, zipkin_span
 
 from agent.agent_state import State
 from agent.prompts import (
@@ -148,4 +148,12 @@ class AnswerGenerator(Runnable):
             logger.error("Error in generate_answer: %s", e)
             error = str(e)
 
+        annotate_current_observation(
+            metadata={
+                "model_id": model_id,
+                "answer_streaming": True,
+                "error": error,
+            },
+            input_data={"main_language": main_language or "same_as_question"},
+        )
         return {"final_answer": final_answer, "error": error}

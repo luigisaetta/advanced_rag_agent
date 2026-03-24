@@ -107,7 +107,7 @@ polyfactory==3.2.0
 propcache==0.4.1
 protobuf==6.33.4
 psutil==7.2.1
-py-zipkin==1.2.8
+langfuse>=3.0.0
 pyarrow==23.0.0
 pyclipper==1.4.0
 pycparser==2.23

@@ -5,7 +5,7 @@ requests>=2.32.0
 python-docx>=1.2.0
 pypdf>=5.7.0
 unstructured>=0.18.0
-py-zipkin>=1.2.8
+langfuse>=3.0.0
 rank-bm25>=0.2.2
 
 langchain>=1.0.0,<2.0.0

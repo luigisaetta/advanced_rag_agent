@@ -30,8 +30,8 @@ from langchain_core.runnables import Runnable
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import PromptTemplate
 
-# integration with APM
-from py_zipkin.zipkin import zipkin_span
+# observability decorators
+from core.observability import annotate_current_observation, zipkin_span
 
 from agent.agent_state import State
 from agent.prompts import (
@@ -250,5 +250,15 @@ class Reranker(Runnable):
 
         # Get reference citations
         citations = self.generate_refs(reranked_docs)
+        annotate_current_observation(
+            metadata={
+                "intent": intent,
+                "enable_reranker": enable_reranker,
+                "retriever_docs_count": len(retriever_docs),
+                "reranked_docs_count": len(reranked_docs),
+                "citations_count": len(citations),
+                "error": error,
+            }
+        )
 
         return {"reranker_docs": reranked_docs, "citations": citations, "error": error}

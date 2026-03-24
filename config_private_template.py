@@ -42,5 +42,9 @@ CONNECT_ARGS = {
     "wallet_password": "xxxxxx",
 }
 
-# integration with APM
-APM_PUBLIC_KEY = "123456789PM"
+# Langfuse credentials (fake placeholders).
+LANGFUSE_PUBLIC_KEY = "pk-lf-fake-public-key"
+LANGFUSE_SECRET_KEY = "sk-lf-fake-secret-key"
+
+# Deprecated: legacy field kept for backward compatibility.
+APM_PUBLIC_KEY = "apm-fake-public-key"

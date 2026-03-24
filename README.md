@@ -56,7 +56,6 @@ Use this project as a reference implementation when you need:
 │   ├── rag_feedback.py
 │   ├── retry_utils.py
 │   ├── session_pdf_vlm.py
-│   ├── transport.py
 │   ├── chunk_index_utils.py
 │   ├── bm25_cache.py
 │   ├── bm25_search.py
@@ -73,7 +72,7 @@ Use this project as a reference implementation when you need:
 ## Design decisions
 - Each graph node is implemented as a dedicated Python class (Runnable pattern)
 - Reranking is currently LLM-based; alternative rerankers can be plugged in
-- Observability is integrated with **OCI APM** (via `py-zipkin`)
+- Observability is integrated with **Langfuse** (tracing + annotations)
 - The UI is implemented with **Streamlit**
 
 ## Streaming behavior
@@ -92,7 +91,7 @@ Use this project as a reference implementation when you need:
 This project is actively evolving and is considered **WIP**.
 
 ## References
-- [Integration with OCI APM](https://luigi-saetta.medium.com/enhancing-observability-in-rag-solutions-with-oracle-cloud-6f93b2675f40)
+- [Langfuse Docs](https://langfuse.com/docs)
 
 ## Why an Agentic Approach
 One primary advantage of an agentic architecture is **modularity**.  
@@ -132,6 +131,9 @@ pip install -r requirements.txt
    - `BM25_CACHE_DIR` (directory for serialized BM25 cache file; default `bm25_cache`)
 4. Citation links:
    - `CITATION_BASE_URL` (env-overridable, default `http://127.0.0.1:8008/`)
+5. Observability:
+   - `ENABLE_TRACING`
+   - `LANGFUSE_HOST`
 
 ### Prompt profiles (domain framing)
 - Domain profiles are centrally defined in `prompt_profiles.py`.
@@ -151,6 +153,8 @@ Create `config_private.py` from `config_private_template.py`, then set:
 3. `VECTOR_WALLET_PWD`
 4. `VECTOR_DSN`
 5. Wallet location (`VECTOR_WALLET_DIR` can be auto-resolved or forced via env var `VECTOR_WALLET_DIR`)
+6. `LANGFUSE_PUBLIC_KEY`
+7. `LANGFUSE_SECRET_KEY`
 
 Docker mount path for this file:
 - `/app/config_private.py`

@@ -173,15 +173,12 @@ BM25_CACHE_DIR = os.getenv("BM25_CACHE_DIR", "bm25_cache")
 
 
 # ---------------------------------------------------------------------------
-# Observability (APM)
+# Observability (Langfuse)
 # ---------------------------------------------------------------------------
 ENABLE_TRACING = True
 AGENT_NAME = "OCI_ADVANCED_RAG_AGENT"
-
-# APM endpoint in OCI.
-# APM_BASE_URL = "https://aaaadec2jjn3maaaaaaaaach4e.apm-agt.eu-frankfurt-1.oci.oraclecloud.com/20200101"
-APM_BASE_URL = "https://aaaadhetxjknmaaaaaaaaac7wy.apm-agt.eu-frankfurt-1.oci.oraclecloud.com/20200101"
-APM_CONTENT_TYPE = "application/json"
+# Langfuse host
+LANGFUSE_HOST = "http://130.61.176.103:3000/"
 
 
 # ---------------------------------------------------------------------------

@@ -50,7 +50,7 @@ Path:
 `/home/ubuntu/custom_rag_agent/config_private.py`
 
 Purpose:
-Stores private database and APM credentials used by the application.
+Stores private database and Langfuse credentials used by the application.
 
 How to prepare:
 1. Create it from template if missing:
@@ -61,7 +61,9 @@ How to prepare:
    - `VECTOR_WALLET_PWD`
    - `VECTOR_DSN`
    - `VECTOR_WALLET_DIR` (host path if using direct path logic)
-   - `APM_PUBLIC_KEY` (if you want to enable APM tracing)
+   - `LANGFUSE_PUBLIC_KEY` (for observability tracing)
+   - `LANGFUSE_SECRET_KEY` (for observability tracing)
+   - `APM_PUBLIC_KEY` (legacy, optional)
 
 Notes:
 1. In Docker Compose, this file is mounted read-only into container at `/app/config_private.py`.

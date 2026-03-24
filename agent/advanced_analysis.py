@@ -23,7 +23,7 @@ from langchain_core.runnables import Runnable
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import PromptTemplate
 import oracledb
-from py_zipkin.zipkin import zipkin_span
+from core.observability import zipkin_span
 
 from agent.advanced_analysis_state import AdvancedAnalysisState
 from agent.prompts import (

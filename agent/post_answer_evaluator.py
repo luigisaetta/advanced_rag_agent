@@ -13,7 +13,7 @@ import itertools
 from langchain_core.runnables import Runnable
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import PromptTemplate
-from py_zipkin.zipkin import zipkin_span
+from core.observability import annotate_current_observation, zipkin_span
 
 from agent.agent_state import State
 from agent.prompts import POST_ANSWER_EVALUATION_TEMPLATE, apply_prompt_profile
@@ -143,6 +143,12 @@ class PostAnswerEvaluator(Runnable):
 
         if not final_answer_text:
             logger.info("PostAnswerEvaluator skipped: empty final answer.")
+            annotate_current_observation(
+                metadata={
+                    "evaluation_status": "skipped",
+                    "reason": "empty_final_answer",
+                }
+            )
             return {
                 "final_answer": downstream_answer_payload,
                 "citations": input.get("citations", []),
@@ -156,6 +162,12 @@ class PostAnswerEvaluator(Runnable):
             configurable = (config or {}).get("configurable", {})
             if not bool(configurable.get("post_answer_evaluation_enabled", True)):
                 logger.info("PostAnswerEvaluator skipped: disabled by config.")
+                annotate_current_observation(
+                    metadata={
+                        "evaluation_status": "skipped",
+                        "reason": "disabled_by_config",
+                    }
+                )
                 return {
                     "final_answer": downstream_answer_payload,
                     "citations": input.get("citations", []),
@@ -226,6 +238,13 @@ class PostAnswerEvaluator(Runnable):
                 confidence,
                 reason,
             )
+            annotate_current_observation(
+                metadata={
+                    "evaluation_status": "completed",
+                    "root_cause": root_cause,
+                    "confidence": confidence,
+                }
+            )
             try:
                 question = str(
                     input.get("user_request") or input.get("standalone_question") or ""
@@ -263,6 +282,11 @@ class PostAnswerEvaluator(Runnable):
             }
         except Exception as exc:
             logger.warning("PostAnswerEvaluator failed: %s", exc)
+            annotate_current_observation(
+                metadata={"evaluation_status": "failed", "error": str(exc)},
+                level="ERROR",
+                status_message=str(exc),
+            )
             return {
                 "final_answer": downstream_answer_payload,
                 "citations": input.get("citations", []),

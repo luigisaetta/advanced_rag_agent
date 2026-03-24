@@ -12,8 +12,8 @@ from langchain_core.runnables import Runnable
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import PromptTemplate
 
-# integration with APM
-from py_zipkin.zipkin import zipkin_span
+# observability decorators
+from core.observability import annotate_current_observation, zipkin_span
 
 from agent.agent_state import State
 from agent.prompts import INTENT_CLASSIFIER_TEMPLATE, apply_prompt_profile
@@ -72,6 +72,13 @@ class IntentClassifier(Runnable):
             logger.info(
                 "IntentClassifier decision: GLOBAL_KB (no session PDF in memory)."
             )
+            annotate_current_observation(
+                metadata={
+                    "intent": "GLOBAL_KB",
+                    "has_session_pdf": False,
+                    "advanced_analysis_enabled": advanced_analysis_enabled,
+                }
+            )
             return {
                 "search_intent": "GLOBAL_KB",
                 "has_session_pdf": False,
@@ -98,6 +105,13 @@ class IntentClassifier(Runnable):
                 intent,
                 has_session_pdf,
             )
+            annotate_current_observation(
+                metadata={
+                    "intent": intent,
+                    "has_session_pdf": has_session_pdf,
+                    "advanced_analysis_enabled": advanced_analysis_enabled,
+                }
+            )
 
             return {
                 "search_intent": intent,
@@ -113,6 +127,15 @@ class IntentClassifier(Runnable):
             logger.warning(
                 "IntentClassifier failed, fallback to GLOBAL_KB: %s",
                 exc,
+            )
+            annotate_current_observation(
+                metadata={
+                    "intent": "GLOBAL_KB",
+                    "has_session_pdf": True,
+                    "fallback_reason": str(exc),
+                },
+                level="ERROR",
+                status_message=str(exc),
             )
             return {
                 "search_intent": "GLOBAL_KB",

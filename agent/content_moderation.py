@@ -25,8 +25,8 @@ Warnings:
 
 from langchain_core.runnables import Runnable
 
-# integration with APM
-from py_zipkin.zipkin import zipkin_span
+# observability decorators
+from core.observability import annotate_current_observation, zipkin_span
 
 from agent.agent_state import State
 from core.utils import get_console_logger
@@ -59,4 +59,7 @@ class ContentModerator(Runnable):
             logger.debug("ContentModerator: user_request=%s", user_request)
 
         # for now, do nothing
+        annotate_current_observation(
+            metadata={"moderation_action": "allow", "error": error}
+        )
         return {"error": error}

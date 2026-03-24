@@ -28,8 +28,8 @@ Warnings:
 import oracledb
 from langchain_core.runnables import Runnable
 
-# integration with APM
-from py_zipkin.zipkin import zipkin_span
+# observability decorators
+from core.observability import annotate_current_observation, zipkin_span
 
 from agent.agent_state import State
 from core.oci_models import get_embedding_model, get_oracle_vs
@@ -106,6 +106,14 @@ class SemanticSearch(Runnable):
         # docs_serializable(relevant_docs)
         # convert the documents to a serializable format
         # to support the API
+        annotate_current_observation(
+            metadata={
+                "collection_name": collection_name,
+                "docs_count": len(relevant_docs),
+                "error": error,
+            },
+            input_data={"search_query_len": len(search_query or "")},
+        )
         return {"retriever_docs": docs_serializable(relevant_docs), "error": error}
 
     #

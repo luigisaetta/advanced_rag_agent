@@ -91,6 +91,7 @@ def update_config_py(text: str, env: dict[str, str], warnings: list[str]) -> str
         ),
         ("CFG_MAIN_LANGUAGE", "MAIN_LANGUAGE", False),
         ("CFG_ENABLE_TRACING", "ENABLE_TRACING", True),
+        ("CFG_LANGFUSE_HOST", "LANGFUSE_HOST", False),
     ]
     out = text
     for env_key, py_key, is_bool in mapping:
@@ -124,6 +125,8 @@ def update_config_private_py(
         ("PRIV_VECTOR_WALLET_PWD", "VECTOR_WALLET_PWD"),
         ("PRIV_VECTOR_DSN", "VECTOR_DSN"),
         ("PRIV_APM_PUBLIC_KEY", "APM_PUBLIC_KEY"),
+        ("PRIV_LANGFUSE_PUBLIC_KEY", "LANGFUSE_PUBLIC_KEY"),
+        ("PRIV_LANGFUSE_SECRET_KEY", "LANGFUSE_SECRET_KEY"),
     ]
     out = text
     for env_key, py_key in mapping:

@@ -33,7 +33,7 @@ Once the data is well extracted, the agentic RAG layer adds intelligence and con
 - **LLM-based reranking**: prioritizes the best chunks for final answer quality.
 - **Session PDF in-memory retrieval**: supports ad-hoc analysis of newly uploaded PDFs without re-ingestion.
 - **Streaming answers and references**: improves user experience and transparency.
-- **Retry and observability controls**: bounded LLM retries, APM tracing hooks, and retrieval/source logging.
+- **Retry and observability controls**: bounded LLM retries, Langfuse tracing hooks, and retrieval/source logging.
 
 Result: the system does not just search; it reasons over multiple retrieval paths and returns grounded responses with references.
 
@@ -78,4 +78,3 @@ When advanced extraction and advanced RAG are used together, you get:
 Advanced multimodal extraction and advanced RAG are not independent upgrades; they are multiplicative.  
 Extraction quality determines the quality of retrievable knowledge, while advanced RAG determines how effectively that knowledge is selected, ranked, and explained.  
 Together, they form a robust architecture for enterprise document intelligence on heterogeneous PDF corpora.
-

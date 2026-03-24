@@ -23,14 +23,16 @@ from contextlib import nullcontext
 
 import streamlit as st
 from langchain_core.messages import AIMessage, HumanMessage
-from py_zipkin import Encoding
-from py_zipkin.zipkin import zipkin_span
+from core.observability import (
+    annotate_current_observation,
+    flush_observability,
+    zipkin_span,
+)
 
 import config
 from agent.post_answer_evaluation_agent import create_post_answer_evaluation_agent
 from agent.rag_agent import State
 from core.agent_config import build_agent_config
-from core.transport import http_transport
 from core.utils import redact_agent_config_for_log
 from ui.rendering import render_advanced_plan, render_answer, render_references
 from ui.session import add_to_chat_history, get_chat_history
@@ -119,6 +121,8 @@ def _run_post_answer_evaluation_if_needed(
             _POST_ANSWER_EVALUATION_AGENT.invoke(eval_input, config=eval_config)
         except Exception as exc:
             logger.warning("Post-answer evaluation async failed: %s", exc)
+        finally:
+            flush_observability()
 
     try:
         _POST_EVAL_EXECUTOR.submit(_background_eval)
@@ -164,17 +168,19 @@ def handle_question(question: str, logger) -> None:
 
         tracing_enabled = bool(agent_config["configurable"].get("enable_tracing", True))
         tracing_context = (
-            zipkin_span(
-                service_name=config.AGENT_NAME,
-                span_name="stream",
-                transport_handler=http_transport,
-                encoding=Encoding.V2_JSON,
-                sample_rate=100,
-            )
+            zipkin_span(service_name=config.AGENT_NAME, span_name="stream")
             if tracing_enabled
             else nullcontext()
         )
         with tracing_context:
+            annotate_current_observation(
+                input_data={"question": question},
+                metadata={
+                    "thread_id": st.session_state.thread_id,
+                    "model_id": st.session_state.model_id,
+                    "collection_name": st.session_state.collection_name,
+                },
+            )
             for event in st.session_state.workflow.stream(
                 input_state, config=agent_config
             ):
@@ -185,6 +191,9 @@ def handle_question(question: str, logger) -> None:
                     results.append(value)
                     by_step[key] = value
                     error = value["error"]
+                    annotate_current_observation(
+                        metadata={"last_completed_node": key, "node_error": error}
+                    )
 
                     if key == "QueryRewrite":
                         st.sidebar.header("Standalone question:")
@@ -214,6 +223,10 @@ def handle_question(question: str, logger) -> None:
             if answer_payload is None:
                 raise KeyError("final_answer")
             full_response = render_answer(answer_payload)
+            annotate_current_observation(
+                output_data={"final_answer": full_response},
+                metadata={"workflow_status": "completed"},
+            )
             _run_post_answer_evaluation_if_needed(
                 by_step=by_step,
                 question=question,
@@ -236,6 +249,11 @@ def handle_question(question: str, logger) -> None:
             if config.ENABLE_USER_FEEDBACK:
                 st.session_state.get_feedback = True
         else:
+            annotate_current_observation(
+                metadata={"workflow_status": "failed"},
+                level="ERROR",
+                status_message=str(error),
+            )
             st.error(error)
             if (
                 st.session_state.enable_advanced_analysis
@@ -244,6 +262,7 @@ def handle_question(question: str, logger) -> None:
                 advanced_status_slot.warning(
                     "Advanced Analysis: interrupted due to error"
                 )
+        flush_observability()
 
         add_to_chat_history(HumanMessage(content=question))
         if full_response:
