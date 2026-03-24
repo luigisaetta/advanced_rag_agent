@@ -135,7 +135,11 @@ class PostAnswerEvaluator(Runnable):
 
         return answer_payload, str(answer_payload).strip()
 
-    @langfuse_span(service_name=AGENT_NAME, span_name="post_answer_evaluation")
+    @langfuse_span(
+        service_name=AGENT_NAME,
+        span_name="post_answer_evaluation",
+        allow_root_trace=True,
+    )
     def invoke(self, input: State, config=None, **kwargs):
         """
         Evaluate final answer and log a root-cause class.

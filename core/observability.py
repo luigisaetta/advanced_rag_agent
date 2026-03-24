@@ -76,6 +76,25 @@ def _get_client():
             return None
 
 
+def _extract_parent_trace_id(args: tuple[Any, ...], kwargs: dict[str, Any]) -> str | None:
+    """Extract parent trace id from LangGraph config payload when present."""
+    config_obj = kwargs.get("config")
+    if config_obj is None and len(args) >= 2 and isinstance(args[1], dict):
+        config_obj = args[1]
+
+    if not isinstance(config_obj, dict):
+        return None
+
+    configurable = config_obj.get("configurable", {})
+    if not isinstance(configurable, dict):
+        return None
+
+    trace_id = configurable.get("langfuse_parent_trace_id")
+    if trace_id:
+        return str(trace_id)
+    return None
+
+
 def annotate_current_observation(
     *,
     input_data: Any | None = None,
@@ -204,6 +223,7 @@ def langfuse_span(
     transport_handler: Callable[..., Any] | None = None,
     encoding: Any | None = None,
     sample_rate: float = 100,
+    allow_root_trace: bool = False,
 ) -> Any:
     """
     Langfuse span decorator/context manager.
@@ -213,9 +233,10 @@ def langfuse_span(
     del transport_handler, encoding, sample_rate
 
     class _SpanContext:
-        def __init__(self, enabled: bool):
+        def __init__(self, enabled: bool, allow_root_trace: bool):
             self.enabled = enabled
             self._ctx_manager = None
+            self.allow_root_trace = allow_root_trace
 
         def __call__(self, func: Callable[..., Any]) -> Callable[..., Any]:
             if not self.enabled:
@@ -227,6 +248,32 @@ def langfuse_span(
 
             @wraps(traced)
             def _wrapped(*args: Any, **kwargs: Any) -> Any:
+                # In v4 runtime, avoid creating orphan top-level traces for
+                # node-level decorators when no parent trace context exists.
+                if not _LANGFUSE_USE_DECORATORS:
+                    client = _get_client()
+                    has_parent_trace = False
+                    if client is not None:
+                        try:
+                            has_parent_trace = bool(client.get_current_trace_id())
+                        except Exception:
+                            has_parent_trace = False
+                    if not has_parent_trace:
+                        parent_trace_id = _extract_parent_trace_id(args, kwargs)
+                        if parent_trace_id:
+                            try:
+                                with client.start_as_current_observation(
+                                    trace_context={"trace_id": parent_trace_id},
+                                    name=span_name,
+                                    as_type="span",
+                                    metadata={"service_name": service_name},
+                                    end_on_exit=True,
+                                ):
+                                    return func(*args, **kwargs)
+                            except Exception:
+                                pass
+                        if not self.allow_root_trace:
+                            return func(*args, **kwargs)
                 try:
                     if _LANGFUSE_USE_DECORATORS and langfuse_context is not None:
                         langfuse_context.update_current_trace(tags=[service_name])
@@ -273,4 +320,4 @@ def langfuse_span(
     enabled = _LANGFUSE_AVAILABLE and _is_enabled() and _is_configured()
     if enabled:
         _bootstrap_langfuse_env()
-    return _SpanContext(enabled=enabled)
+    return _SpanContext(enabled=enabled, allow_root_trace=allow_root_trace)

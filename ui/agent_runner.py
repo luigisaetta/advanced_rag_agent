@@ -194,6 +194,10 @@ def handle_question(question: str, logger) -> None:
                 },
             )
             main_trace_id = get_current_trace_id()
+            if main_trace_id:
+                agent_config.setdefault("configurable", {})[
+                    "langfuse_parent_trace_id"
+                ] = main_trace_id
             for event in st.session_state.workflow.stream(
                 input_state, config=agent_config
             ):
