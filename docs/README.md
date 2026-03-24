@@ -10,6 +10,7 @@ Related document:
 - [Post Answer Evaluation](./post_answer_evaluation.md)
 - [Generate Regression Dataset](./generate_regression.md)
 - [Langfuse Observability Setup](./README_langfuse_observability.md)
+- [Langfuse Score Integration](./README_langfuse_scores.md)
 
 ## Overview
 
