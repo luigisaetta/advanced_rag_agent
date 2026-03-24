@@ -26,4 +26,5 @@ class PostAnswerEvaluationState(TypedDict):
     post_answer_root_cause: str
     post_answer_reason: str
     post_answer_confidence: float
+    post_answer_quality_score: int
     error: Optional[str]

@@ -113,6 +113,18 @@ class PostAnswerEvaluator(Runnable):
         return max(0.0, min(1.0, conf))
 
     @staticmethod
+    def _normalize_quality_score(value) -> int:
+        """
+        Normalize quality score to integer range [1, 10].
+        Defaults to 5 on invalid input.
+        """
+        try:
+            score = int(round(float(value)))
+        except (TypeError, ValueError):
+            return 5
+        return max(1, min(10, score))
+
+    @staticmethod
     def _split_answer_payload(answer_payload):
         """
         Return (payload_for_downstream, plain_text_for_evaluation).
@@ -164,6 +176,7 @@ class PostAnswerEvaluator(Runnable):
                 "post_answer_root_cause": "",
                 "post_answer_reason": "",
                 "post_answer_confidence": 0.0,
+                "post_answer_quality_score": 0,
                 "error": error,
             }
 
@@ -183,6 +196,7 @@ class PostAnswerEvaluator(Runnable):
                     "post_answer_root_cause": "",
                     "post_answer_reason": "",
                     "post_answer_confidence": 0.0,
+                    "post_answer_quality_score": 0,
                     "error": error,
                 }
 
@@ -240,11 +254,16 @@ class PostAnswerEvaluator(Runnable):
             root_cause = self._normalize_cause(parsed.get("root_cause"))
             reason = str(parsed.get("reason", "") or "").strip()
             confidence = self._normalize_confidence(parsed.get("confidence"))
+            quality_score = self._normalize_quality_score(parsed.get("quality_score"))
 
             logger.info(
-                "PostAnswerEvaluator result: root_cause=%s confidence=%.3f reason=%s",
+                (
+                    "PostAnswerEvaluator result: root_cause=%s confidence=%.3f "
+                    "quality_score=%d reason=%s"
+                ),
                 root_cause,
                 confidence,
+                quality_score,
                 reason,
             )
             annotate_current_observation(
@@ -252,6 +271,7 @@ class PostAnswerEvaluator(Runnable):
                     "evaluation_status": "completed",
                     "root_cause": root_cause,
                     "confidence": confidence,
+                    "quality_score": quality_score,
                 }
             )
             target_trace_id = str(
@@ -272,6 +292,13 @@ class PostAnswerEvaluator(Runnable):
                     value=confidence,
                     data_type="NUMERIC",
                     metadata={"root_cause": root_cause},
+                )
+                create_trace_score(
+                    trace_id=target_trace_id,
+                    name="post_answer_quality_score",
+                    value=quality_score,
+                    data_type="NUMERIC",
+                    metadata={"root_cause": root_cause, "confidence": confidence},
                 )
                 flush_observability()
             try:
@@ -307,6 +334,7 @@ class PostAnswerEvaluator(Runnable):
                 "post_answer_root_cause": root_cause,
                 "post_answer_reason": reason,
                 "post_answer_confidence": confidence,
+                "post_answer_quality_score": quality_score,
                 "error": error,
             }
         except Exception as exc:
@@ -322,5 +350,6 @@ class PostAnswerEvaluator(Runnable):
                 "post_answer_root_cause": "",
                 "post_answer_reason": "",
                 "post_answer_confidence": 0.0,
+                "post_answer_quality_score": 0,
                 "error": error,
             }

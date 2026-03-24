@@ -296,7 +296,8 @@ Return ONLY valid JSON:
 {{
   "root_cause": "NO_ISSUE|RETRIEVAL|RERANK|GENERATION",
   "reason": "short evidence-based reason",
-  "confidence": 0.0
+  "confidence": 0.0,
+  "quality_score": 1
 }}
 
 Confidence rules:
@@ -304,6 +305,16 @@ Confidence rules:
 - Use lower confidence when evidence is partial/ambiguous.
 - Use higher confidence only when evidence strongly supports the selected root cause.
 - `reason` must be written in English only.
+
+Quality score rules (1-10, integer):
+- 1 = very poor answer quality, unsupported and mostly incorrect.
+- 3 = poor quality, major evidence/grounding gaps.
+- 5 = acceptable but partial/uncertain quality.
+- 7 = good quality, mostly grounded and useful.
+- 9 = excellent quality, grounded and complete.
+- 10 = near-perfect quality given provided evidence.
+- Score must reflect overall answer quality (accuracy, grounding, completeness, relevance, clarity),
+  not only the root-cause label.
 
 User request:
 {user_request}

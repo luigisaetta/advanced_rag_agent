@@ -67,6 +67,7 @@ class State(TypedDict):
     post_answer_root_cause: str = ""
     post_answer_reason: str = ""
     post_answer_confidence: float = 0.0
+    post_answer_quality_score: int = 0
     # Citations
     citations: list = []
 

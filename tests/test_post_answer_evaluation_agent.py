@@ -21,6 +21,7 @@ class _FakePostAnswerEvaluator(Runnable):
             "post_answer_root_cause": "RETRIEVAL",
             "post_answer_reason": "missing doc",
             "post_answer_confidence": 0.8,
+            "post_answer_quality_score": 4,
             "error": input_state.get("error"),
         }
 
@@ -43,6 +44,7 @@ def test_create_post_answer_evaluation_workflow_invokes_node():
     )
     assert out["post_answer_root_cause"] == "RETRIEVAL"
     assert out["post_answer_confidence"] == 0.8
+    assert out["post_answer_quality_score"] == 4
 
 
 def test_create_post_answer_evaluation_agent_normalizes_output_fields():
@@ -55,4 +57,5 @@ def test_create_post_answer_evaluation_agent_normalizes_output_fields():
     assert out["post_answer_root_cause"] == "RETRIEVAL"
     assert out["post_answer_reason"] == "missing doc"
     assert out["post_answer_confidence"] == 0.8
+    assert out["post_answer_quality_score"] == 4
     assert out["error"] is None

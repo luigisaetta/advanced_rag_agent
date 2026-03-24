@@ -53,6 +53,7 @@ class PostAnswerEvaluationAgent(Runnable):
             "post_answer_root_cause": result.get("post_answer_root_cause", ""),
             "post_answer_reason": result.get("post_answer_reason", ""),
             "post_answer_confidence": result.get("post_answer_confidence", 0.0),
+            "post_answer_quality_score": result.get("post_answer_quality_score", 0),
             "error": result.get("error"),
         }
 

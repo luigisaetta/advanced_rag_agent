@@ -67,6 +67,7 @@ def test_post_answer_evaluator_skips_when_answer_is_empty():
     assert out["post_answer_root_cause"] == ""
     assert out["post_answer_reason"] == ""
     assert out["post_answer_confidence"] == 0.0
+    assert out["post_answer_quality_score"] == 0
 
 
 def test_post_answer_evaluator_skips_when_disabled():
@@ -79,6 +80,7 @@ def test_post_answer_evaluator_skips_when_disabled():
     assert out["final_answer"] == "Final answer text."
     assert out["post_answer_root_cause"] == ""
     assert out["post_answer_confidence"] == 0.0
+    assert out["post_answer_quality_score"] == 0
 
 
 def test_post_answer_evaluator_success_and_persists_feedback(monkeypatch):
@@ -96,6 +98,7 @@ def test_post_answer_evaluator_success_and_persists_feedback(monkeypatch):
             "root_cause": "retrieval",
             "reason": "Missing crucial evidence in retrieval set.",
             "confidence": 0.82,
+            "quality_score": 4,
         },
     )
     monkeypatch.setattr(
@@ -118,6 +121,7 @@ def test_post_answer_evaluator_success_and_persists_feedback(monkeypatch):
     assert out["post_answer_root_cause"] == "RETRIEVAL"
     assert out["post_answer_reason"] == "Missing crucial evidence in retrieval set."
     assert out["post_answer_confidence"] == 0.82
+    assert out["post_answer_quality_score"] == 4
     assert len(feedback_calls) == 1
     assert feedback_calls[0]["question"] == "What are the key obligations?"
     assert feedback_calls[0]["root_cause"] == "RETRIEVAL"
@@ -137,6 +141,7 @@ def test_post_answer_evaluator_normalizes_invalid_fields(monkeypatch):
             "root_cause": "something_else",
             "reason": "N/A",
             "confidence": 7,
+            "quality_score": 42,
         },
     )
     monkeypatch.setattr(
@@ -146,6 +151,7 @@ def test_post_answer_evaluator_normalizes_invalid_fields(monkeypatch):
     out = node.invoke(_base_state(), config={"configurable": {}})
     assert out["post_answer_root_cause"] == "NO_ISSUE"
     assert out["post_answer_confidence"] == 1.0
+    assert out["post_answer_quality_score"] == 10
     assert len(feedback_calls) == 1
 
 
@@ -163,3 +169,4 @@ def test_post_answer_evaluator_handles_exception_and_falls_back(monkeypatch):
     assert out["post_answer_root_cause"] == ""
     assert out["post_answer_reason"] == ""
     assert out["post_answer_confidence"] == 0.0
+    assert out["post_answer_quality_score"] == 0
