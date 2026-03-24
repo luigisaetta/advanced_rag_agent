@@ -13,7 +13,12 @@ import itertools
 from langchain_core.runnables import Runnable
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import PromptTemplate
-from core.observability import annotate_current_observation, langfuse_span
+from core.observability import (
+    annotate_current_observation,
+    create_trace_score,
+    flush_observability,
+    langfuse_span,
+)
 
 from agent.agent_state import State
 from agent.prompts import POST_ANSWER_EVALUATION_TEMPLATE, apply_prompt_profile
@@ -245,6 +250,26 @@ class PostAnswerEvaluator(Runnable):
                     "confidence": confidence,
                 }
             )
+            target_trace_id = str(
+                configurable.get("post_answer_target_trace_id", "") or ""
+            ).strip()
+            if target_trace_id:
+                create_trace_score(
+                    trace_id=target_trace_id,
+                    name="post_answer_root_cause",
+                    value=root_cause,
+                    data_type="CATEGORICAL",
+                    comment=reason or None,
+                    metadata={"confidence": confidence},
+                )
+                create_trace_score(
+                    trace_id=target_trace_id,
+                    name="post_answer_confidence",
+                    value=confidence,
+                    data_type="NUMERIC",
+                    metadata={"root_cause": root_cause},
+                )
+                flush_observability()
             try:
                 question = str(
                     input.get("user_request") or input.get("standalone_question") or ""

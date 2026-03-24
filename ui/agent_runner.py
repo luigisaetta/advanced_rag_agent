@@ -26,6 +26,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from core.observability import (
     annotate_current_observation,
     flush_observability,
+    get_current_trace_id,
     rename_current_observation,
     langfuse_span,
 )
@@ -79,7 +80,12 @@ def _has_hybrid_db_signal(docs: list) -> bool:
 
 
 def _run_post_answer_evaluation_if_needed(
-    by_step: dict, question: str, final_answer: str, agent_config: dict, logger
+    by_step: dict,
+    question: str,
+    final_answer: str,
+    agent_config: dict,
+    logger,
+    parent_trace_id: str | None = None,
 ) -> None:
     """
     Run post-answer evaluator after UI rendering (log-only), preserving streaming UX.
@@ -115,6 +121,10 @@ def _run_post_answer_evaluation_if_needed(
         error=None,
     )
     eval_config = copy.deepcopy(agent_config)
+    if parent_trace_id:
+        eval_config.setdefault("configurable", {})[
+            "post_answer_target_trace_id"
+        ] = parent_trace_id
 
     def _background_eval():
         """Run post-answer evaluator in a background worker."""
@@ -173,6 +183,7 @@ def handle_question(question: str, logger) -> None:
             if tracing_enabled
             else nullcontext()
         )
+        main_trace_id = None
         with tracing_context:
             annotate_current_observation(
                 input_data={"question": question},
@@ -182,6 +193,7 @@ def handle_question(question: str, logger) -> None:
                     "collection_name": st.session_state.collection_name,
                 },
             )
+            main_trace_id = get_current_trace_id()
             for event in st.session_state.workflow.stream(
                 input_state, config=agent_config
             ):
@@ -237,6 +249,7 @@ def handle_question(question: str, logger) -> None:
                 final_answer=full_response,
                 agent_config=agent_config,
                 logger=logger,
+                parent_trace_id=main_trace_id,
             )
             elapsed_time = round((time.time() - time_start), 1)
             logger.info("Elapsed time: %s sec.", elapsed_time)

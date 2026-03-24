@@ -141,6 +141,50 @@ def rename_current_observation(name: str) -> None:
         return
 
 
+def get_current_trace_id() -> str | None:
+    """Return active Langfuse trace id when available."""
+    if not (_LANGFUSE_AVAILABLE and _is_enabled() and _is_configured()):
+        return None
+    try:
+        client = _get_client()
+        if client is None:
+            return None
+        trace_id = client.get_current_trace_id()
+        return str(trace_id) if trace_id else None
+    except Exception:
+        return None
+
+
+def create_trace_score(
+    *,
+    trace_id: str,
+    name: str,
+    value: str | float,
+    data_type: str = "CATEGORICAL",
+    comment: str | None = None,
+    metadata: dict[str, Any] | None = None,
+) -> None:
+    """Attach a score to a specific Langfuse trace."""
+    if not (
+        trace_id and name and _LANGFUSE_AVAILABLE and _is_enabled() and _is_configured()
+    ):
+        return
+    try:
+        client = _get_client()
+        if client is None:
+            return
+        client.create_score(
+            trace_id=trace_id,
+            name=name,
+            value=value,
+            data_type=data_type,
+            comment=comment,
+            metadata=metadata,
+        )
+    except Exception:
+        return
+
+
 def flush_observability() -> None:
     """Force flush buffered observability events to Langfuse."""
     if not (_LANGFUSE_AVAILABLE and _is_enabled() and _is_configured()):

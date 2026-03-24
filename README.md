@@ -231,3 +231,4 @@ See [LICENSE](./LICENSE)
   - runtime selection in sidebar `Options` (`Prompt profile`);
   - automatic prompt injection across classifier, query builder, reranker, answer generation, and advanced-analysis prompts.
 - Added Langfuse observability integration for end-to-end tracing (main RAG flow + post-answer evaluation).
+- 2026-03-24: Added Langfuse cross-trace scoring so post-answer evaluation writes `post_answer_root_cause` and `post_answer_confidence` onto the main user-answer trace.
